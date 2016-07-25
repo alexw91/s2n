@@ -17,8 +17,10 @@
 
 #include "error/s2n_errno.h"
 
+#include "tls/s2n_alerts.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
+
 #include "utils/s2n_safety.h"
 
 const struct s2n_key_exchange_algorithm s2n_rsa = {
@@ -48,6 +50,7 @@ struct s2n_cipher_suite s2n_all_cipher_suites[] = {
     {"AES128-GCM-SHA256", {TLS_RSA_WITH_AES_128_GCM_SHA256}, &s2n_rsa, &s2n_aes128_gcm, S2N_HMAC_NONE, S2N_HMAC_SHA256, S2N_TLS12},   /* 0x00,0x9C */
     {"AES256-GCM-SHA384", {TLS_RSA_WITH_AES_256_GCM_SHA384}, &s2n_rsa, &s2n_aes256_gcm, S2N_HMAC_NONE, S2N_HMAC_SHA384, S2N_TLS12}, /* 0x00,0x9D */
     {"DHE-RSA-AES128-GCM-SHA256", {TLS_DHE_RSA_WITH_AES_128_GCM_SHA256}, &s2n_dhe, &s2n_aes128_gcm, S2N_HMAC_NONE, S2N_HMAC_SHA256, S2N_TLS12},   /* 0x00,0x9E */
+    {"TLS_FALLBACK_SCSV", {TLS_FALLBACK_SCSV}, NULL, NULL, S2N_HMAC_NONE, S2N_HMAC_NONE, S2N_TLS10}, /* 0x56, 0x00 */
     {"ECDHE-RSA-DES-CBC3-SHA", {TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA}, &s2n_ecdhe, &s2n_3des, S2N_HMAC_SHA1, S2N_HMAC_SHA256, S2N_TLS10},   /* 0xC0,0x12 */
     {"ECDHE-RSA-AES128-SHA", {TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA}, &s2n_ecdhe, &s2n_aes128, S2N_HMAC_SHA1, S2N_HMAC_SHA256, S2N_TLS10},   /* 0xC0,0x13 */
     {"ECDHE-RSA-AES256-SHA", {TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA}, &s2n_ecdhe, &s2n_aes256, S2N_HMAC_SHA1, S2N_HMAC_SHA256, S2N_TLS10},   /* 0xC0,0x14 */
@@ -119,7 +122,7 @@ static int s2n_set_cipher_as_server(struct s2n_connection *conn, uint8_t *wire, 
     if (conn->client_protocol_version < S2N_TLS12) {
         uint8_t fallback_scsv[S2N_TLS_CIPHER_SUITE_LEN] = { TLS_FALLBACK_SCSV };
         if (s2n_wire_ciphers_contain(fallback_scsv, wire, count, cipher_suite_len)) {
-            conn->closed = 1;
+            s2n_queue_reader_inappropriate_fallback(conn);
             S2N_ERROR(S2N_ERR_FALLBACK_DETECTED);
         }
     }
