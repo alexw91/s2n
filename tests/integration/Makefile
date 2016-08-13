@@ -34,3 +34,10 @@ all:
 	STATUS=$$?; \
 	exit $$STATUS \
 	)
+	( \
+	DYLD_LIBRARY_PATH="../../lib/:../testlib/:$(LIBCRYPTO_ROOT)/lib:$$DYLD_LIBRARY_PATH" \
+	LD_LIBRARY_PATH="../../lib/:../testlib/:$(LIBCRYPTO_ROOT)/lib:$$LD_LIBRARY_PATH" \
+	./s2n_tls_fallback_scsv_test.sh \
+	STATUS=$$?; \
+	exit $$STATUS \
+	)

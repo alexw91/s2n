@@ -19,6 +19,7 @@
 
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
+#include "tls/s2n_alerts.h"
 #include "utils/s2n_safety.h"
 
 const struct s2n_key_exchange_algorithm s2n_rsa = {
@@ -121,7 +122,7 @@ static int s2n_set_cipher_as_server(struct s2n_connection *conn, uint8_t * wire,
     if (conn->client_protocol_version < S2N_TLS12) {
         uint8_t fallback_scsv[S2N_TLS_CIPHER_SUITE_LEN] = { TLS_FALLBACK_SCSV };
         if (s2n_wire_ciphers_contain(fallback_scsv, wire, count, cipher_suite_len)) {
-            conn->closed = 1;
+            s2n_queue_reader_inappropriate_fallback(conn);
             S2N_ERROR(S2N_ERR_FALLBACK_DETECTED);
         }
     }

@@ -27,31 +27,37 @@
 #include "utils/s2n_safety.h"
 #include "utils/s2n_blob.h"
 
-#define S2N_TLS_ALERT_CLOSE_NOTIFY          0
-#define S2N_TLS_ALERT_UNEXPECTED_MSG        10
-#define S2N_TLS_ALERT_BAD_RECORD_MAC        20
-#define S2N_TLS_ALERT_DECRIPT_FAILED        21
-#define S2N_TLS_ALERT_RECORD_OVERFLOW       22
-#define S2N_TLS_ALERT_DECOMP_FAILED         30
-#define S2N_TLS_ALERT_HANDSHAKE_FAILED      40
-#define S2N_TLS_ALERT_NO_CERTIFICATE        41
-#define S2N_TLS_ALERT_BAD_CERTIFICATE       42
-#define S2N_TLS_ALERT_UNSUPPORTED_CERT      43
-#define S2N_TLS_ALERT_CERT_REVOKED          44
-#define S2N_TLS_ALERT_CERT_EXPIRED          45
-#define S2N_TLS_ALERT_CERT_UNKNOWN          46
-#define S2N_TLS_ALERT_ILLEGAL_PARAMETER     47
-#define S2N_TLS_ALERT_UNKNOWN_CA            48
-#define S2N_TLS_ALERT_ACCESS_DENIED         49
-#define S2N_TLS_ALERT_DECODE_ERROR          50
-#define S2N_TLS_ALERT_DECRYPT_ERROR         51
-#define S2N_TLS_ALERT_EXPORT_RESTRICTED     60
-#define S2N_TLS_ALERT_PROTOCOL_VERSION      70
-#define S2N_TLS_ALERT_INSUFFICIENT_SECURITY 71
-#define S2N_TLS_ALERT_INTERNAL_ERROR        80
-#define S2N_TLS_ALERT_USER_CANCELED         90
-#define S2N_TLS_ALERT_NO_RENEGOTIATION      100
-#define S2N_TLS_ALERT_UNSUPPORTED_EXTENSION 110
+#define S2N_TLS_ALERT_CLOSE_NOTIFY              0
+#define S2N_TLS_ALERT_UNEXPECTED_MSG            10
+#define S2N_TLS_ALERT_BAD_RECORD_MAC            20
+#define S2N_TLS_ALERT_DECRIPT_FAILED            21
+#define S2N_TLS_ALERT_RECORD_OVERFLOW           22
+#define S2N_TLS_ALERT_DECOMP_FAILED             30
+#define S2N_TLS_ALERT_HANDSHAKE_FAILED          40
+#define S2N_TLS_ALERT_NO_CERTIFICATE            41
+#define S2N_TLS_ALERT_BAD_CERTIFICATE           42
+#define S2N_TLS_ALERT_UNSUPPORTED_CERT          43
+#define S2N_TLS_ALERT_CERT_REVOKED              44
+#define S2N_TLS_ALERT_CERT_EXPIRED              45
+#define S2N_TLS_ALERT_CERT_UNKNOWN              46
+#define S2N_TLS_ALERT_ILLEGAL_PARAMETER         47
+#define S2N_TLS_ALERT_UNKNOWN_CA                48
+#define S2N_TLS_ALERT_ACCESS_DENIED             49
+#define S2N_TLS_ALERT_DECODE_ERROR              50
+#define S2N_TLS_ALERT_DECRYPT_ERROR             51
+#define S2N_TLS_ALERT_EXPORT_RESTRICTED         60
+#define S2N_TLS_ALERT_PROTOCOL_VERSION          70
+#define S2N_TLS_ALERT_INSUFFICIENT_SECURITY     71
+#define S2N_TLS_ALERT_INTERNAL_ERROR            80
+#define S2N_TLS_ALERT_INAPPROPRIATE_FALLBACK    86
+#define S2N_TLS_ALERT_USER_CANCELED             90
+#define S2N_TLS_ALERT_NO_RENEGOTIATION          100
+#define S2N_TLS_ALERT_UNSUPPORTED_EXTENSION     110
+#define S2N_TLS_ALERT_CERTIFICATE_UNOBTAINABLE  111
+#define S2N_TLS_ALERT_UNRECOGNIZED_NAME         112
+#define S2N_TLS_ALERT_BAD_CERT_STATUS_RESPONSE  113
+#define S2N_TLS_ALERT_BAD_CERT_HASH_VALUE       114
+#define S2N_TLS_ALERT_NO_APPLICATION_PROTOCOL   120
 
 #define S2N_TLS_ALERT_LEVEL_WARNING         1
 #define S2N_TLS_ALERT_LEVEL_FATAL           2
@@ -110,6 +116,24 @@ int s2n_queue_writer_close_alert_warning(struct s2n_connection *conn)
 
     GUARD(s2n_stuffer_write(&conn->writer_alert_out, &out));
     conn->close_notify_queued = 1;
+
+    return 0;
+}
+
+int s2n_queue_reader_inappropriate_fallback(struct s2n_connection *conn)
+{
+    uint8_t alert[2];
+    alert[0] = S2N_TLS_ALERT_LEVEL_FATAL;
+    alert[1] = S2N_TLS_ALERT_INAPPROPRIATE_FALLBACK;
+
+    struct s2n_blob out = {.data = alert,.size = sizeof(alert) };
+
+    /* If there is an alert pending, do nothing */
+    if (s2n_stuffer_data_available(&conn->reader_alert_out)) {
+        return 0;
+    }
+
+    GUARD(s2n_stuffer_write(&conn->reader_alert_out, &out));
 
     return 0;
 }
