@@ -23,6 +23,9 @@ echo "Starting s2nd in the background..."
 #Give s2nd time to start up
 sleep 3s
 
+echo "OpenSSL Version:"
+openssl version
+
 # Modified from https://dwradcliffe.com/2014/10/16/testing-tls-fallback.html
 OPENSSL_OUTPUT=`openssl s_client -connect $S2ND_HOST:$S2ND_PORT -fallback_scsv -tls1`
 
