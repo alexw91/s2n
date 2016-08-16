@@ -23,12 +23,11 @@ echo "Starting s2nd in the background..."
 #Give s2nd time to start up
 sleep 3s
 
-OPENSSL_LOCATION="../../libcrypto-build/openssl-1.0.2h/apps/openssl"
 echo "OpenSSL Version:"
-$OPENSSL_LOCATION version
+../../libcrypto-build/openssl-1.0.2h/apps/openssl version
 
 # Modified from https://dwradcliffe.com/2014/10/16/testing-tls-fallback.html
-OPENSSL_OUTPUT=`echo "Q\n" | $OPENSSL_LOCATION s_client -connect $S2ND_HOST:$S2ND_PORT -fallback_scsv -tls1 2>&1`
+OPENSSL_OUTPUT=`echo "Q\n" | ../../libcrypto-build/openssl-1.0.2h/apps/openssl s_client -connect $S2ND_HOST:$S2ND_PORT -fallback_scsv -tls1 2>&1`
 
 # Kill s2nd (the last job executed in the background)
 kill $!
