@@ -28,7 +28,7 @@ echo "OpenSSL Version:"
 $OPENSSL_LOCATION version
 
 # Modified from https://dwradcliffe.com/2014/10/16/testing-tls-fallback.html
-OPENSSL_OUTPUT=`$OPENSSL_LOCATION s_client -connect $S2ND_HOST:$S2ND_PORT -fallback_scsv -tls1 2>&1`
+OPENSSL_OUTPUT=`echo "Q\n" | $OPENSSL_LOCATION s_client -connect $S2ND_HOST:$S2ND_PORT -fallback_scsv -tls1 2>&1`
 
 # Kill s2nd (the last job executed in the background)
 kill $!
