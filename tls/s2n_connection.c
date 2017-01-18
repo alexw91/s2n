@@ -22,7 +22,6 @@
 #include <s2n.h>
 
 #include "error/s2n_errno.h"
-
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_record.h"
@@ -39,6 +38,11 @@
 #include "utils/s2n_timer.h"
 #include "utils/s2n_blob.h"
 #include "utils/s2n_mem.h"
+
+int deny_all_certs(struct s2n_blob *x509_der_cert, struct s2n_cert_public_key *public_key, void* context)
+{
+    S2N_ERROR(S2N_ERR_CERT_UNTRUSTED);
+}
 
 struct s2n_connection *s2n_connection_new(s2n_mode mode)
 {
@@ -70,6 +74,12 @@ struct s2n_connection *s2n_connection_new(s2n_mode mode)
     conn->config = &s2n_default_config;
     conn->close_notify_queued = 0;
     conn->session_id_len = 0;
+
+    /* By default, only the client will authenticate the Server's Certificate. The Server does not request or
+     * authenticate any client certificates. */
+    conn->client_cert_auth_type = S2N_CERT_AUTH_NONE;
+    conn->verify_client_cert_chain_callback = deny_all_certs;
+    conn->verify_server_cert_chain_callback = deny_all_certs;
 
     /* Allocate the fixed-size stuffers */
     blob.data = conn->alert_in_data;
@@ -134,6 +144,7 @@ static int s2n_connection_wipe_keys(struct s2n_connection *conn)
 
     GUARD(s2n_dh_params_free(&conn->secure.server_dh_params));
     GUARD(s2n_ecc_params_free(&conn->secure.server_ecc_params));
+    GUARD(s2n_free(&conn->secure.client_cert_chain));
 
     return 0;
 }
@@ -182,6 +193,12 @@ int s2n_connection_wipe(struct s2n_connection *conn)
     struct s2n_session_key initial_server_key;
     struct s2n_session_key secure_client_key;
     struct s2n_session_key secure_server_key;
+
+    s2n_cert_auth_type initial_client_cert_auth_type = conn->client_cert_auth_type;
+    verify_cert_chain* initial_verify_client_cert = conn->verify_client_cert_chain_callback;
+    verify_cert_chain* initial_verify_server_cert = conn->verify_server_cert_chain_callback;
+    void *initial_verify_client_cert_context = conn->verify_client_cert_context;
+    void *initial_verify_server_cert_context = conn->verify_server_cert_context;
 
     /* Wipe all of the sensitive stuff */
     GUARD(s2n_connection_wipe_keys(conn));
@@ -239,13 +256,20 @@ int s2n_connection_wipe(struct s2n_connection *conn)
     conn->secure.cipher_suite = &s2n_null_cipher_suite;
     conn->server = &conn->initial;
     conn->client = &conn->initial;
+    conn->client_cert_auth_type = initial_client_cert_auth_type;
+    conn->verify_client_cert_chain_callback = initial_verify_client_cert;
+    conn->verify_server_cert_chain_callback = initial_verify_server_cert;
+    conn->verify_client_cert_context = initial_verify_client_cert_context;
+    conn->verify_server_cert_context = initial_verify_server_cert_context;
     conn->max_fragment_length = S2N_SMALL_FRAGMENT_LENGTH;
     conn->handshake.handshake_type = INITIAL;
     conn->handshake.message_number = 0;
     GUARD(s2n_hash_init(&conn->handshake.md5, S2N_HASH_MD5));
     GUARD(s2n_hash_init(&conn->handshake.sha1, S2N_HASH_SHA1));
+    GUARD(s2n_hash_init(&conn->handshake.sha224, S2N_HASH_SHA224));
     GUARD(s2n_hash_init(&conn->handshake.sha256, S2N_HASH_SHA256));
     GUARD(s2n_hash_init(&conn->handshake.sha384, S2N_HASH_SHA384));
+    GUARD(s2n_hash_init(&conn->handshake.sha512, S2N_HASH_SHA512));
     GUARD(s2n_hmac_init(&conn->client->client_record_mac, S2N_HMAC_NONE, NULL, 0));
     GUARD(s2n_hmac_init(&conn->server->server_record_mac, S2N_HMAC_NONE, NULL, 0));
 
@@ -272,6 +296,29 @@ int s2n_connection_wipe(struct s2n_connection *conn)
     conn->actual_protocol_version = s2n_unknown_protocol_version;
 
     return 0;
+}
+
+int s2n_connection_set_client_cert_auth_type(struct s2n_connection *conn, s2n_cert_auth_type cert_auth_type)
+{
+    conn->client_cert_auth_type = cert_auth_type;
+    return 0;
+}
+
+int s2n_connection_set_server_cert_verify_callback(struct s2n_connection *conn, verify_cert_chain* callback, void *context)
+{
+    notnull_check(callback);
+    conn->verify_server_cert_chain_callback = callback;
+    conn->verify_server_cert_context = context;
+    return 0;
+}
+
+int s2n_connection_set_client_cert_verify_callback(struct s2n_connection *conn, verify_cert_chain* callback, void *context)
+{
+    notnull_check(callback);
+    conn->verify_client_cert_chain_callback = callback;
+    conn->verify_client_cert_context = context;
+    return 0;
+
 }
 
 int s2n_connection_set_read_fd(struct s2n_connection *conn, int rfd)
