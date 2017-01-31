@@ -42,8 +42,6 @@ int s2n_hash_digest_size(s2n_hash_algorithm alg, uint8_t *out)
 
 int s2n_hash_init(struct s2n_hash_state *state, s2n_hash_algorithm alg)
 {
-    notnull_check(state);
-
     int r;
     switch (alg) {
     case S2N_HASH_NONE:
@@ -87,9 +85,6 @@ int s2n_hash_init(struct s2n_hash_state *state, s2n_hash_algorithm alg)
 
 int s2n_hash_update(struct s2n_hash_state *state, const void *data, uint32_t size)
 {
-    notnull_check(state);
-    if ( size > 0 ) { notnull_check(data); }
-
     int r;
     switch (state->alg) {
     case S2N_HASH_NONE:
@@ -130,9 +125,6 @@ int s2n_hash_update(struct s2n_hash_state *state, const void *data, uint32_t siz
 
 int s2n_hash_digest(struct s2n_hash_state *state, void *out, uint32_t size)
 {
-    notnull_check(state);
-    notnull_check(out);
-
     int r;
     switch (state->alg) {
     case S2N_HASH_NONE:
@@ -180,14 +172,11 @@ int s2n_hash_digest(struct s2n_hash_state *state, void *out, uint32_t size)
 
 int s2n_hash_reset(struct s2n_hash_state *state)
 {
-    notnull_check(state);
     return s2n_hash_init(state, state->alg);
 }
 
 int s2n_hash_copy(struct s2n_hash_state *to, struct s2n_hash_state *from)
 {
-    notnull_check(to);
-    notnull_check(from);
     memcpy_check(to, from, sizeof(struct s2n_hash_state));
     return 0;
 }
