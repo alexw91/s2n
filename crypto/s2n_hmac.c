@@ -27,6 +27,7 @@
 
 int s2n_hmac_hash_alg(s2n_hmac_algorithm hmac_alg, s2n_hash_algorithm *out)
 {
+    notnull_check(out);
     switch(hmac_alg) {
     case S2N_HMAC_NONE:       *out = S2N_HASH_NONE;   break;
     case S2N_HMAC_MD5:        *out = S2N_HASH_MD5;    break;
@@ -47,6 +48,7 @@ int s2n_hmac_hash_alg(s2n_hmac_algorithm hmac_alg, s2n_hash_algorithm *out)
 
 int s2n_hmac_digest_size(s2n_hmac_algorithm hmac_alg, uint8_t *out)
 {
+    notnull_check(out);
     s2n_hash_algorithm hash_alg;
     GUARD(s2n_hmac_hash_alg(hmac_alg, &hash_alg));
     GUARD(s2n_hash_digest_size(hash_alg, out));
@@ -55,6 +57,9 @@ int s2n_hmac_digest_size(s2n_hmac_algorithm hmac_alg, uint8_t *out)
 
 static int s2n_sslv3_mac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm alg, const void *key, uint32_t klen)
 {
+    notnull_check(state);
+    if ( klen > 0 ) { notnull_check(key); };
+
     s2n_hash_algorithm hash_alg = S2N_HASH_NONE;
 
     if (alg == S2N_HMAC_SSLv3_MD5) {
@@ -86,6 +91,9 @@ static int s2n_sslv3_mac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm a
 
 static int s2n_sslv3_mac_digest(struct s2n_hmac_state *state, void *out, uint32_t size)
 {
+    notnull_check(state);
+    notnull_check(out);
+
     for (int i = 0; i < state->block_size; i++) {
         state->xor_pad[i] = 0x5c;
     }
@@ -99,6 +107,7 @@ static int s2n_sslv3_mac_digest(struct s2n_hmac_state *state, void *out, uint32_
 
 int s2n_hmac_block_size(s2n_hmac_algorithm hmac_alg, uint16_t *block_size)
 {
+    notnull_check(block_size);
     switch(hmac_alg) {
     case S2N_HMAC_NONE:       *block_size = 64;   break;
     case S2N_HMAC_MD5:        *block_size = 64;   break;
@@ -117,6 +126,7 @@ int s2n_hmac_block_size(s2n_hmac_algorithm hmac_alg, uint16_t *block_size)
 
 int s2n_hmac_hash_block_size(s2n_hmac_algorithm hmac_alg, uint16_t *block_size)
 {
+    notnull_check(block_size);
     switch(hmac_alg) {
     case S2N_HMAC_NONE:       *block_size = 64;   break;
     case S2N_HMAC_MD5:        *block_size = 64;   break;
@@ -135,6 +145,8 @@ int s2n_hmac_hash_block_size(s2n_hmac_algorithm hmac_alg, uint16_t *block_size)
 
 int s2n_hmac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm alg, const void *key, uint32_t klen)
 {
+    notnull_check(state);
+    if ( klen > 0 ) { notnull_check(key); }
     s2n_hash_algorithm hash_alg;
     state->currently_in_hash_block = 0;
 
@@ -185,6 +197,8 @@ int s2n_hmac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm alg, const vo
 
 int s2n_hmac_update(struct s2n_hmac_state *state, const void *in, uint32_t size)
 {
+    notnull_check(state);
+    notnull_check(in);
     /* Keep track of how much of the current hash block is full
      *
      * Why the 4294949760 constant in this code? 4294949760 is the highest 32-bit
@@ -214,6 +228,8 @@ int s2n_hmac_update(struct s2n_hmac_state *state, const void *in, uint32_t size)
 
 int s2n_hmac_digest(struct s2n_hmac_state *state, void *out, uint32_t size)
 {
+    notnull_check(state);
+    notnull_check(out);
     if (state->alg == S2N_HMAC_SSLv3_SHA1 || state->alg == S2N_HMAC_SSLv3_MD5) {
         return s2n_sslv3_mac_digest(state, out, size);
     }
@@ -228,6 +244,8 @@ int s2n_hmac_digest(struct s2n_hmac_state *state, void *out, uint32_t size)
 
 int s2n_hmac_digest_two_compression_rounds(struct s2n_hmac_state *state, void *out, uint32_t size)
 {
+    notnull_check(state);
+    notnull_check(out);
     GUARD(s2n_hmac_digest(state, out, size));
 
     /* If there were 9 or more bytes of space left in the current hash block
@@ -245,6 +263,7 @@ int s2n_hmac_digest_two_compression_rounds(struct s2n_hmac_state *state, void *o
 
 int s2n_hmac_reset(struct s2n_hmac_state *state)
 {
+    notnull_check(state);
     state->currently_in_hash_block = 0;
     memcpy_check(&state->inner, &state->inner_just_key, sizeof(state->inner));
 
