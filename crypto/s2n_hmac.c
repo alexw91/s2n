@@ -218,8 +218,6 @@ int s2n_hmac_update(struct s2n_hmac_state *state, const void *in, uint32_t size)
      * input. On some platforms, including Intel, the operation can take a
      * smaller number of cycles if the input is "small".
      */
-    notnull_check(state);
-    notnull_check(in);
     state->currently_in_hash_block += (4294949760 + size) % state->hash_block_size;
     state->currently_in_hash_block %= state->block_size;
 
