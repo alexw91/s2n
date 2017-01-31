@@ -57,8 +57,6 @@ int s2n_hmac_digest_size(s2n_hmac_algorithm hmac_alg, uint8_t *out)
 
 static int s2n_sslv3_mac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm alg, const void *key, uint32_t klen)
 {
-    notnull_check(state);
-    if ( klen > 0 ) { notnull_check(key); };
 
     s2n_hash_algorithm hash_alg = S2N_HASH_NONE;
 
@@ -91,9 +89,6 @@ static int s2n_sslv3_mac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm a
 
 static int s2n_sslv3_mac_digest(struct s2n_hmac_state *state, void *out, uint32_t size)
 {
-    notnull_check(state);
-    notnull_check(out);
-
     for (int i = 0; i < state->block_size; i++) {
         state->xor_pad[i] = 0x5c;
     }
@@ -145,8 +140,6 @@ int s2n_hmac_hash_block_size(s2n_hmac_algorithm hmac_alg, uint16_t *block_size)
 
 int s2n_hmac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm alg, const void *key, uint32_t klen)
 {
-    notnull_check(state);
-    if ( klen > 0 ) { notnull_check(key); }
     s2n_hash_algorithm hash_alg;
     state->currently_in_hash_block = 0;
 
@@ -226,8 +219,6 @@ int s2n_hmac_update(struct s2n_hmac_state *state, const void *in, uint32_t size)
 
 int s2n_hmac_digest(struct s2n_hmac_state *state, void *out, uint32_t size)
 {
-    notnull_check(state);
-    notnull_check(out);
     if (state->alg == S2N_HMAC_SSLv3_SHA1 || state->alg == S2N_HMAC_SSLv3_MD5) {
         return s2n_sslv3_mac_digest(state, out, size);
     }
@@ -242,8 +233,6 @@ int s2n_hmac_digest(struct s2n_hmac_state *state, void *out, uint32_t size)
 
 int s2n_hmac_digest_two_compression_rounds(struct s2n_hmac_state *state, void *out, uint32_t size)
 {
-    notnull_check(state);
-    notnull_check(out);
     GUARD(s2n_hmac_digest(state, out, size));
 
     /* If there were 9 or more bytes of space left in the current hash block
@@ -261,7 +250,6 @@ int s2n_hmac_digest_two_compression_rounds(struct s2n_hmac_state *state, void *o
 
 int s2n_hmac_reset(struct s2n_hmac_state *state)
 {
-    notnull_check(state);
     state->currently_in_hash_block = 0;
     memcpy_check(&state->inner, &state->inner_just_key, sizeof(state->inner));
 
