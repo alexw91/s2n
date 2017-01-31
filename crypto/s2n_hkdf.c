@@ -32,6 +32,7 @@ int s2n_hkdf_extract(s2n_hmac_algorithm alg, const struct s2n_blob *salt, const 
 {
     notnull_check(salt);
     notnull_check(key);
+    notnull_check(pseudo_rand_key);
     struct s2n_hmac_state hmac;
     uint8_t hmac_size;
     GUARD(s2n_hmac_digest_size(alg, &hmac_size));
