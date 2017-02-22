@@ -86,9 +86,6 @@ struct s2n_connection {
     verify_cert_chain *verify_server_cert_chain_callback;
     void *verify_client_cert_context;
     void *verify_server_cert_context;
-    uint8_t server_preferred_cert_types[S2N_MAX_CERT_TYPE_PREFERENCE_LEN];
-    uint8_t server_preferred_cert_types_len;
-
 
     /* Our crypto parameters */
     struct s2n_crypto_parameters initial;

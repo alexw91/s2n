@@ -37,6 +37,30 @@ def cleanup_processes(*processes):
         p.kill()
         p.wait()
 
+def try_handshake_with_s2n_as_client(endpoint, port, cipher, ssl_version, sig_algs=None, curves=None, resume=None, clientAuth=None):
+    s_server_cmd = ["../../libcrypto-root/bin/openssl", "s_server", 
+            "-quiet", "-rev",
+            "-accept", str(port),
+            "-cert", "test_certs/server_2048_rsa.cert",
+            "-key", "test_certs/server_2048_rsa.key",
+            "-cipher", str(cipher)]
+    
+    s2nc_cmd = ["../../bin/s2nc"];
+    
+    if clientAuth is not None:
+        s_server_cmd.extend(["-Verify", "1"])
+        s2nc_cmd.append("-m")
+    if sig_algs is not None:
+        return -1;
+    if curves is not None:
+        return -1;
+    if resume is not None:
+        return -1;
+    if ssl_version is not S2N_TLS12:
+        return -1;
+    
+    s2nc_cmd.extend([str(endpoint), str(port)])
+
 def try_handshake(endpoint, port, cipher, ssl_version, sig_algs=None, curves=None, resume=None, clientAuth=None):
     # Fire up s2nd
     if clientAuth is None:

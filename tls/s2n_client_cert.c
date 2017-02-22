@@ -65,14 +65,10 @@ int s2n_client_cert_recv(struct s2n_connection *conn)
 
 int s2n_client_cert_send(struct s2n_connection *conn)
 {
-    struct s2n_stuffer *out = &conn->handshake.io;
-    struct s2n_blob client_cert_chain = conn->client->client_cert_chain;
-    notnull_check(client_cert_chain.data);
+    struct s2n_cert_chain_and_key *chain = conn->config->cert_and_key_pairs;
 
     /* TODO: Check that RSA is in conn->server_preferred_cert_types and conn->secure.client_cert_sig_algorithm */
-
-    GUARD(s2n_stuffer_write_uint24(out, client_cert_chain.size));
-    GUARD(s2n_stuffer_write(out, &client_cert_chain));
+    GUARD(s2n_send_cert_chain(&conn->handshake.io, chain));
 
     return 0;
 }
