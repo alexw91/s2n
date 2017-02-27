@@ -38,12 +38,20 @@ def cleanup_processes(*processes):
         p.wait()
 
 def try_handshake_with_s2n_as_client(endpoint, port, cipher, ssl_version, sig_algs=None, curves=None, resume=None, clientAuth=None):
+    s2n_env = dict(os.environ)
+    
+    for k, v in s2n_env.items():
+        print(str(k) + "=" + str(v))
+            
+        
+    s2n_env["S2N_ENABLE_CLIENT_MODE"] = "1"
     s_server_cmd = ["../../libcrypto-root/bin/openssl", "s_server", 
-            "-quiet", "-rev",
+            PROTO_VERS_TO_S_CLIENT_ARG[ssl_version],
+            "-www", "-state", "-debug",
             "-accept", str(port),
             "-cert", "test_certs/server_2048_rsa.cert",
             "-key", "test_certs/server_2048_rsa.key",
-            "-cipher", str(cipher)]
+            ]
     
     s2nc_cmd = ["../../bin/s2nc"];
     
@@ -51,15 +59,49 @@ def try_handshake_with_s2n_as_client(endpoint, port, cipher, ssl_version, sig_al
         s_server_cmd.extend(["-Verify", "1"])
         s2nc_cmd.append("-m")
     if sig_algs is not None:
+        print("sig_algs is not None")
         return -1;
     if curves is not None:
+        print("curves is not None")
         return -1;
     if resume is not None:
-        return -1;
-    if ssl_version is not S2N_TLS12:
+        print("resume is not None")
         return -1;
     
     s2nc_cmd.extend([str(endpoint), str(port)])
+    print("s_server cmd: " + str(s_server_cmd))
+    print("s2nc cmd: " + str(s2nc_cmd))
+    
+    print("Starting Openssl...")
+    s_server = subprocess.Popen(s_server_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    time.sleep(0.010) # Sleep for 10 milliseconds to allow s_server to bind to the socket
+    print("Starting s2n...")
+    s2nc = subprocess.Popen(s2nc_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=s2n_env)
+         
+    # Read it
+    found = 0
+
+    # Write the cipher name from s2n
+    print("Writing Cipher to s2n input...")
+    s2nc.stdin.write((cipher + "\n").encode("utf-8"))
+    s2nc.stdin.flush()
+    
+    found = 0
+    for line in range(0, 10):
+        output = s2nc.stdout.readline().decode("utf-8")
+        
+        if output.strip() == "cipher":
+            found = 1
+            print("96")
+            break
+
+    if found == 0:
+        cleanup_processes(s2nc, s_server)
+        print("101")
+        return -1
+    
+    cleanup_processes(s2nc, s_server)
+    return 0
 
 def try_handshake(endpoint, port, cipher, ssl_version, sig_algs=None, curves=None, resume=None, clientAuth=None):
     # Fire up s2nd
@@ -246,7 +288,7 @@ def elliptic_curve_test(host, port):
                 print_result(prefix, ret)
                 if ret != 0:
                     failed = 1
-
+#
     # Make sure we can still negotiate a non-EC kx suite if we don't match anything on the client
     ret = try_handshake(host, port, "ECDHE-RSA-AES128-SHA:AES256-GCM-SHA384", S2N_TLS12, curves=":".join(unsupported_curves))
     print_result("%-65s ... " % "Testing curve mismatch fallback", ret)
@@ -258,24 +300,31 @@ def elliptic_curve_test(host, port):
 def client_auth_test(host, port):
     print("\n\tRunning Client Auth Handshake Tests:")
     failed = 0
-    for ssl_version in [S2N_TLS10, S2N_TLS11, S2N_TLS12]:
-        print("\n\tTesting ciphers using client version: " + S2N_PROTO_VERS_TO_STR[ssl_version])
-        for cipher in S2N_CIPHERS:
-            cipher_name = cipher.openssl_name
-            cipher_vers = cipher.min_tls_vers
-
-            # Skip the cipher if openssl can't test it. 3DES/RC4 are disabled by default in 1.1.0
-            if not cipher.openssl_1_1_0_compatible:
-                continue
-
-            if ssl_version < cipher_vers:
-                continue
-
-            ret = try_handshake(host, port, cipher_name, ssl_version, clientAuth = True)
-            result_prefix = "Cipher: %-28s Vers: %-8s ClientAuth: True... " % (cipher_name, S2N_PROTO_VERS_TO_STR[ssl_version])
-            print_result(result_prefix, ret)
-            if ret != 0:
-                failed = 1
+    for client in ["openssl", "s2n"]:
+        for ssl_version in [S2N_TLS10, S2N_TLS11, S2N_TLS12]:
+            print("\n\tTesting ciphers using client version: " + S2N_PROTO_VERS_TO_STR[ssl_version])
+            for cipher in S2N_CIPHERS:
+                cipher_name = cipher.openssl_name
+                cipher_vers = cipher.min_tls_vers
+    
+                # Skip the cipher if openssl can't test it. 3DES/RC4 are disabled by default in 1.1.0
+                if not cipher.openssl_1_1_0_compatible:
+                    continue
+    
+                if ssl_version < cipher_vers:
+                    continue
+                
+                if(client == "openssl"):
+                    ret = try_handshake(host, port, cipher_name, ssl_version, clientAuth = True)
+                
+                if(client == "s2n"):
+                    #ret = try_handshake_with_s2n_as_client(host, port, cipher_name, ssl_version, clientAuth = True)
+                    ret = -1
+                    
+                result_prefix = "Cipher: %-28s Vers: %-8s ClientAuth: True, Client: %-8s... " % (cipher_name, S2N_PROTO_VERS_TO_STR[ssl_version], client)
+                print_result(result_prefix, ret)
+                if ret != 0:
+                    failed = 1
 
     return failed
 

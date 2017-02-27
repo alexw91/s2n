@@ -210,7 +210,7 @@ int main(int argc, char *const *argv)
     freeaddrinfo(ai_list);
 
     if (connected == 0) {
-        fprintf(stderr, "Failed to connect to %s:%s\n", argv[1], port);
+        fprintf(stderr, "Failed to connect to %s:%s\n", host, port);
         close(sockfd);
         exit(1);
     }
@@ -220,6 +220,8 @@ int main(int argc, char *const *argv)
     }
 
     struct s2n_config *config = s2n_config_new();
+    s2n_config_set_cipher_preferences(config, "test_all");
+
     if (config == NULL) {
         fprintf(stderr, "Error getting new config: '%s'\n", s2n_strerror(s2n_errno, "EN"));
         exit(1);
