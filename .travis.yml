@@ -101,7 +101,7 @@ install:
 before_script:
   # Add all of our test dependencies to the PATH. Use Openssl 1.1.0 so the latest openssl is used for s_client
   # integration tests.
-  - export PATH=$PYTHON_INSTALL_DIR/bin:$OPENSSL_1_1_0_INSTALL_DIR/bin:$GNUTLS_INSTALL_DIR/bin:$SAW_INSTALL_DIR/bin:$Z3_INSTALL_DIR/bin:$SCAN_BUILD_INSTALL_DIR/bin:$PATH
+  - export PATH=$PYTHON_INSTALL_DIR/bin:$OPENSSL_1_1_0_INSTALL_DIR/bin:$GNUTLS_INSTALL_DIR/bin:$SAW_INSTALL_DIR/bin:$Z3_INSTALL_DIR/bin:$SCAN_BUILD_INSTALL_DIR/bin:$LATEST_CLANG_INSTALL_DIR/bin:$PATH
   - export LD_LIBRARY_PATH=$OPENSSL_1_1_0_INSTALL_DIR/lib:$LD_LIBRARY_PATH; export DYLD_LIBRARY_PATH=$OPENSSL_1_1_0_INSTALL_DIR/lib:$LD_LIBRARY_PATH;
   # Select the libcrypto to build s2n against. If this is unset, default to the latest(Openssl 1.1.0)
   - if [[ -z $S2N_LIBCRYPTO ]]; then export LIBCRYPTO_ROOT=$OPENSSL_1_1_0_INSTALL_DIR ; fi
@@ -123,7 +123,7 @@ script:
   # Build and run unit tests with scan-build for osx. scan-build bundle isn't available for linux
   - if [[ "$TRAVIS_OS_NAME" == "osx" && "$TESTS" == "integration" ]]; then   scan-build --status-bugs -o /tmp/scan-build make -j8; STATUS=$?; test $STATUS -ne 0 && cat /tmp/scan-build/*/* ; [ "$STATUS" -eq "0" ] ; fi
   - if [[ "$TESTS" == "integration" ]]; then make clean; make integration ; fi
-  - if [[ "$TESTS" == "fuzz" ]]; then export PATH=$LATEST_CLANG_INSTALL_DIR/bin:$PATH && make clean && make fuzz ; fi
+  - if [[ "$TESTS" == "fuzz" ]]; then make clean && make fuzz ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$TESTS" == "sawHMAC" ]]; then make -C tests/saw/ tmp/verify_s2n_hmac_$SAW_HMAC_TEST.log ; fi
   - if [[ "$TESTS" == "sawDRBG" ]]; then make -C tests/saw tmp/spec/DRBG/DRBG.log ; fi
   - if [[ "$TESTS" == "sawHMACFailure" ]]; then make -C tests/saw failure-tests ; fi
