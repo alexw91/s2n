@@ -181,6 +181,10 @@ int main(int argc, char **argv)
     BEGIN_TEST();
     EXPECT_SUCCESS(setenv("S2N_ENABLE_CLIENT_MODE", "1", 0));
 
+    /*
+     * Test Mutual Auth using **s2n_connection_set_client_auth_type**
+     */
+
     EXPECT_NOT_NULL(config = s2n_config_new());
     EXPECT_SUCCESS(s2n_config_add_cert_chain_and_key(config, certificate_chain, private_key));
     EXPECT_SUCCESS(s2n_config_add_dhparams(config, dhparams));
@@ -239,8 +243,6 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_connection_set_recv_ctx(server_conn, &client_to_server));
         EXPECT_SUCCESS(s2n_connection_set_send_ctx(server_conn, &server_to_client));
 
-
-
         int tries = 0;
         do {
             int ret;
@@ -265,6 +267,10 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_connection_free(server_conn));
     }
 
+
+    /*
+     * Test Mutual Auth using **s2n_config_set_client_auth_type**
+     */
 
     EXPECT_SUCCESS(s2n_config_set_client_auth_type(config, S2N_CERT_AUTH_REQUIRED));
 
@@ -314,8 +320,6 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_connection_set_send_ctx(client_conn, &client_to_server));
         EXPECT_SUCCESS(s2n_connection_set_recv_ctx(server_conn, &client_to_server));
         EXPECT_SUCCESS(s2n_connection_set_send_ctx(server_conn, &server_to_client));
-
-
 
         int tries = 0;
         do {
