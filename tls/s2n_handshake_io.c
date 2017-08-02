@@ -529,6 +529,14 @@ static int handshake_read_io(struct s2n_connection *conn)
             return 0;
         }
 
+        /* Are we a client that received a Certificate Request instead of a ServerHelloDone */
+        if (conn->mode == S2N_CLIENT
+                && handshake_message_type == SERVER_CERT_REQ
+                && ACTIVE_STATE(conn).message_type == SERVER_HELLO_DONE) {
+            //Switch which State Machine we are using to handle Client Auth
+            conn->handshake.handshake_type |= CLIENT_AUTH;
+        }
+
         if (handshake_message_type != ACTIVE_STATE(conn).message_type) {
             S2N_ERROR(S2N_ERR_BAD_MESSAGE);
         }
