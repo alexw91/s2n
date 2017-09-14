@@ -50,6 +50,8 @@ libs:
 	$(MAKE) -C error
 	$(MAKE) -C stuffer
 	$(MAKE) -C crypto
+	$(MAKE) -C asn1
+	$(MAKE) -C x509
 	$(MAKE) -C tls
 	$(MAKE) -C lib
 
@@ -60,6 +62,8 @@ bin: libs
 	$(MAKE) -C error
 	$(MAKE) -C stuffer
 	$(MAKE) -C crypto
+	$(MAKE) -C asn1
+	$(MAKE) -C x509
 	$(MAKE) -C tls
 	$(MAKE) -C lib
 
@@ -104,6 +108,8 @@ clean:
 	$(MAKE) -C crypto decruft
 	$(MAKE) -C utils decruft
 	$(MAKE) -C error decruft
+	$(MAKE) -C asn1 decruft
+	$(MAKE) -C x509 decruft
 	$(MAKE) -C tls decruft
 	$(MAKE) -C bin decruft
 	$(MAKE) -C lib decruft
