@@ -49,6 +49,7 @@ int s2n_asn1_parse_variable_len(struct s2n_stuffer *in, uint32_t *out_len)
         /* How many bytes are is the length field? */
         switch (len_of_len) {
             case 0:
+                /* ASN1_Tag_Null has a length of 0, so don't return an error for 0 length values. */
                 parsed_len = 0;
                 break;
             case 1:
@@ -91,13 +92,13 @@ int s2n_asn1_parse_stuffer(struct s2n_stuffer *in, struct s2n_asn1_node *out)
     out->tag =      (raw_type & ASN1_TYPE_TAG_MASK);
 
     /* Length */
-    uint32_t len;
-    GUARD(s2n_asn1_parse_variable_len(in, &len));
+    uint32_t parsed_len;
+    GUARD(s2n_asn1_parse_variable_len(in, &parsed_len));
 
     /* Value */
     struct s2n_blob value;
-    value.data = s2n_stuffer_raw_read(in, len);
-    value.size = len;
+    value.data = s2n_stuffer_raw_read(in, parsed_len);
+    value.size = parsed_len;
     notnull_check(value.data);
 
     /* Raw Data */
