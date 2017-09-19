@@ -13,6 +13,12 @@
  * permissions and limitations under the License.
  */
 
+#include "asn1/s2n_asn1.h"
+#include "error/s2n_errno.h"
+#include "stuffer/s2n_stuffer.h"
+#include "utils/s2n_blob.h"
+#include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 /*
  * From: https://tools.ietf.org/html/rfc2459#section-4.1
@@ -88,58 +94,78 @@
  */
 
 typedef enum {
-    AlgorithmIdentifier,
-    SignatureAlgorithm,
-    SignatureValue,
-    TBSCert,
-    TBSCertVersion,
-    TBSCertSerialNumber,
-    TBSCertSignature,
-    TBSCertIssuerName,
-    TBSCertValidityPeriod,
-    TBSCertSubjectName,
-    TBSCertSubjectPublicKey,
-    TBSCertIssuerUniqueId,
-    TBSCertSubjectUniqueId,
-    TBSCertExtensionList,
-    TBSCertExtension
-} s2n_x509_node_type;
-
-typedef enum {
     CommonName,
     CountryName,
     LocalityName,
     StateOrProvinceName,
     OrganizationalName,
     OrganizationalUnitName,
+    Unknown
 } s2n_x509_name_type;
 
-struct s2n_x509_node {
-    s2n_x509_node_type type;
-    struct s2n_asn1_node *asn1;
+typedef enum {
+    RSA,
+    DiffieHellman
+} s2n_x509_algorithm_id;
+
+typedef enum {
+    SubjectAltName,
+    IssuerAltName,
+    KeyUsage,
+    Unknown
+} s2n_x509_extension_type;
+
+struct s2n_x509_extension {
+    s2n_x509_extension_type type;
+    struct s2n_blob id;
+    struct s2n_blob value;
+    struct s2n_x509_extension *next;
 };
 
-struct s2n_x509_name {
+struct s2n_x509_extension_list {
+    struct s2n_asn1_node *raw_asn1;
+    struct s2n_x509_extension *start;
+};
+
+struct s2n_x509_name_element {
     s2n_x509_name_type type;
-    struct s2n_asn1_node *asn1;
-    struct s2n_x509_name *next;
+    struct s2n_blob id;
+    struct s2n_blob value;
+    struct s2n_x509_name_element *next;
+};
+
+struct s2n_x509_name_list {
+    struct s2n_asn1_node *raw_asn1;
+    struct s2n_x509_name_element *start;
+};
+
+struct s2n_x509_validity_period {
+    time_t not_before;
+    time_t not_after;
+};
+
+struct s2n_public_key_info {
+    s2n_x509_algorithm_id alg;
+    struct s2n_blob public_key;
 };
 
 struct s2n_tbs_x509_cert {
-    struct s2n_x509_node cert_version; /* Optional, if absent assume Version 1 */
-    struct s2n_x509_node serial_number;
-    struct s2n_x509_node signature;
-    struct s2n_x509_name issuer_name;
-    struct s2n_x509_node validity_period;
-    struct s2n_x509_name subject_name;
-    struct s2n_x509_node subject_public_key;
-    struct s2n_x509_node issuer_unique_id;
-    struct s2n_x509_node subject_unique_id;
-    struct s2n_x509_node extensions;
+    struct s2n_asn1_node *raw_asn1;
+    uint8_t cert_version;
+    struct s2n_blob serial_number;
+    struct s2n_x509_algorithm_id sig_alg;
+    struct s2n_x509_name_list issuer_name;
+    struct s2n_x509_validity_period validity_period;
+    struct s2n_x509_name_list subject_name;
+    struct s2n_public_key_info subject_public_key;
+    struct s2n_blob issuer_unique_id;
+    struct s2n_blob subject_unique_id;
+    struct s2n_x509_extension_list extensions;
 };
 
 struct s2n_x509_cert {
+    struct s2n_asn1_node *raw_asn1;
     struct s2n_tbs_x509_cert tbs_cert;
-    struct s2n_x509_node sig_alg;
-    struct s2n_x509_node sig_value;
+    struct s2n_x509_algorithm_id sig_alg;
+    struct s2n_blob signature;
 };

@@ -20,9 +20,7 @@
 #include "utils/s2n_mem.h"
 #include "utils/s2n_safety.h"
 
-#include <stdio.h>
-
-int s2n_asn1_parse_variable_len(struct s2n_stuffer *in, uint32_t *out_len)
+int s2n_parse_der_variable_len(struct s2n_stuffer *in, uint32_t *out_len)
 {
     uint8_t raw_len;
     GUARD(s2n_stuffer_read_uint8(in, &raw_len));
@@ -78,52 +76,52 @@ int s2n_asn1_parse_variable_len(struct s2n_stuffer *in, uint32_t *out_len)
 }
 
 
-int s2n_asn1_parse_stuffer(struct s2n_stuffer *in, struct s2n_asn1_node *out)
+int s2n_parse_der_stuffer_to_asn1(struct s2n_stuffer *der_in, struct s2n_asn1_node **out)
 {
-    uint8_t *start = in->blob.data + in->read_cursor;
+    struct s2n_asn1_node *node = malloc(sizeof(struct s2n_asn1_node));
+    notnull_check(node);
+
+    uint8_t *start = der_in->blob.data + der_in->read_cursor;
 
     /* Type */
     uint8_t raw_type;
-    GUARD(s2n_stuffer_read_uint8(in, &raw_type));
+    GUARD(s2n_stuffer_read_uint8(der_in, &raw_type));
 
     /* The Raw Type is actually 3 different fields, the class, encoding, and tag */
-    out->class =    (raw_type & ASN1_TYPE_CLASS_MASK);
-    out->encoding = (raw_type & ASN1_TYPE_ENCODING_MASK);
-    out->tag =      (raw_type & ASN1_TYPE_TAG_MASK);
+    node->class =    (raw_type & ASN1_TYPE_CLASS_MASK);
+    node->encoding = (raw_type & ASN1_TYPE_ENCODING_MASK);
+    node->tag =      (raw_type & ASN1_TYPE_TAG_MASK);
 
     /* Length */
     uint32_t parsed_len;
-    GUARD(s2n_asn1_parse_variable_len(in, &parsed_len));
+    GUARD(s2n_parse_der_variable_len(der_in, &parsed_len));
 
     /* Value */
     struct s2n_blob value;
-    value.data = s2n_stuffer_raw_read(in, parsed_len);
+    value.data = s2n_stuffer_raw_read(der_in, parsed_len);
     value.size = parsed_len;
     notnull_check(value.data);
 
     /* Raw Data */
-    uint8_t *end = (in->blob.data + in->read_cursor);
-    out->raw.data = start;
-    out->raw.size = end - start;
+    uint8_t *end = (der_in->blob.data + der_in->read_cursor);
+    node->raw.data = start;
+    node->raw.size = end - start;
 
     /* Child */
-    if (out->encoding == ASN1_Encoded_Primitive) {
-        out->child.value = value;
+    if (node->encoding == ASN1_Encoded_Primitive) {
+        node->child.value = value;
     } else {
         struct s2n_stuffer child_stuffer;
         GUARD(s2n_stuffer_init(&child_stuffer, &value));
         GUARD(s2n_stuffer_skip_write(&child_stuffer, value.size));
-        out->child.node = malloc(sizeof(struct s2n_asn1_node));
-        notnull_check(out->child.node);
-        GUARD(s2n_asn1_parse_stuffer(&child_stuffer, out->child.node));
+        GUARD(s2n_parse_der_stuffer_to_asn1(&child_stuffer, &node->child.node));
     }
 
     /* Next */
-    if (s2n_stuffer_data_available(in) > 0) {
-        out->next = malloc(sizeof(struct s2n_asn1_node));
-        notnull_check(out->next);
-        GUARD(s2n_asn1_parse_stuffer(in, out->next));
+    if (s2n_stuffer_data_available(der_in) > 0) {
+        GUARD(s2n_parse_der_stuffer_to_asn1(der_in, &node->next));
     }
 
+    *out = node;
     return 0;
 }

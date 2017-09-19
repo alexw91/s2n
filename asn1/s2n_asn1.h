@@ -94,4 +94,4 @@ struct s2n_asn1_node {
     struct s2n_asn1_node *next;
 };
 
-int s2n_asn1_parse_stuffer(struct s2n_stuffer *in, struct s2n_asn1_node* out);
+int s2n_parse_der_stuffer_to_asn1(struct s2n_stuffer *in, struct s2n_asn1_node **out);

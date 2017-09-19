@@ -39,7 +39,8 @@ int main(int argc, char **argv)
     EXPECT_SUCCESS(s2n_stuffer_growable_alloc(&der_stuffer, 2048));
     EXPECT_SUCCESS(s2n_stuffer_alloc_ro_from_string(&pem_stuffer, cert_chain_pem));
     EXPECT_SUCCESS(s2n_stuffer_certificate_from_pem(&pem_stuffer, &der_stuffer));
-    struct s2n_asn1_node root;
-    EXPECT_SUCCESS(s2n_asn1_parse_stuffer(&der_stuffer, &root));
+    struct s2n_asn1_node *root;
+    EXPECT_SUCCESS(s2n_parse_der_stuffer_to_asn1(&der_stuffer, &root));
+    EXPECT_SUCCESS(s2n_parse_der_stuffer_to_asn1(&der_stuffer, &root));
     END_TEST();
 }
