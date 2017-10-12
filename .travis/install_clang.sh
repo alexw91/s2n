@@ -45,7 +45,7 @@ git clone https://chromium.googlesource.com/chromium/src/tools/clang
 
 cd clang
 # Reset to known working version of Clang
-git reset --hard e96a7b48d35ab6a268c8372048781cdec903a794
+git reset
 cd ..
 
 echo "Updating Clang..."
