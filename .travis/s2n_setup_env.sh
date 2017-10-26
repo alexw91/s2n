@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 # Setup Default Build Config
 : ${S2N_LIBCRYPTO:=openssl-1.1.0}
 : ${BUILD_S2N:=true}

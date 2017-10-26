@@ -13,7 +13,7 @@
 # permissions and limitations under the License.
 #
 
-set -e
+set -ex
 
 #Figlet is required for ctverif printing
 sudo apt-get install -y figlet

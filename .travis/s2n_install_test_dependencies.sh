@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 # Clear the Travis Cache Weekly to ensure that any upstream breakages in test dependencies are caught
 if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
     sudo rm -rf ./test-deps

@@ -13,7 +13,7 @@
 # permissions and limitations under the License.
 #
 
-set -e
+set -ex
 
 ALL_FUZZ_TEST_FILES=""
 

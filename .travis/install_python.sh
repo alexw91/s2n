@@ -14,7 +14,7 @@
 #
 #!/bin/bash
 
-set -e
+set -ex
 
 if [ "$#" -ne 3 ]; then
 	echo "install_python.sh libcrypto_root build_dir install_dir"

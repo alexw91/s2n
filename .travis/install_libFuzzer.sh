@@ -12,7 +12,7 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 #
-set -e
+set -ex
 
 usage() {
 	echo "install_libFuzzer.sh download_dir install_dir travis_platform"

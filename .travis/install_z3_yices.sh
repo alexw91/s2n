@@ -13,7 +13,7 @@
 # permissions and limitations under the License.
 #
 
-set -e
+set -ex
 
 usage() {
 	echo "install_z3_yices.sh download_dir install_dir"

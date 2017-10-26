@@ -13,7 +13,7 @@
 # permissions and limitations under the License.
 #
 
-set -e
+set -ex
 
 make indent > /dev/null
 DIFF_LINE_COUNT=`git diff | wc -l`

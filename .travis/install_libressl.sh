@@ -13,7 +13,7 @@
 # permissions and limitations under the License.
 #
 
-set -e
+set -ex
 
 usage() {
     echo "install_libressl.sh build_dir install_dir"

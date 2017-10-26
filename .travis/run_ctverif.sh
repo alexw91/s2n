@@ -13,7 +13,7 @@
 # permissions and limitations under the License.
 #
 
-set -e
+set -ex
 
 usage() {
     echo "run_ctverif.sh install_dir"

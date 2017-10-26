@@ -13,7 +13,7 @@
 # permissions and limitations under the License.
 #
 
-set -e
+set -ex
 
 usage() {
     echo "Usage: runFuzzTest.sh TEST_NAME FUZZ_TIMEOUT_SEC"
