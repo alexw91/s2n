@@ -14,6 +14,7 @@
 #
 
 #header checker for either copyright info and/or proper year
+set -e
 
 YEAR=$(date +%Y)
 while IFS= read -r -d $'\0' file; do

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Use prlimit to set the memlock limit to unlimited for linux. OSX is unlimited by default
 if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo -E "$PRLIMIT_INSTALL_DIR/bin/prlimit --pid \"$$\" --memlock=unlimited:unlimited" ; fi
 

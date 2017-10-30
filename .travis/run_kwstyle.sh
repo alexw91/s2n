@@ -13,6 +13,8 @@
 # permissions and limitations under the License.
 #
 
+set -e
+
 S2N_FILES=$(find "$PWD" -type f -name "s2n_*.[ch]" | grep -v "test")
 
 FAILED=0
