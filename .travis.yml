@@ -17,6 +17,7 @@ os:
 env:
   - TESTS=ctverif
   - S2N_LIBCRYPTO=openssl-1.1.1 BUILD_S2N=true TESTS=integration GCC6_REQUIRED=true
+  - S2N_LIBCRYPTO=openssl-1.1.1 BUILD_S2N=true TESTS=unit GCC6_REQUIRED=true S2N_COVERAGE=true
   - S2N_LIBCRYPTO=openssl-1.0.2 BUILD_S2N=true TESTS=integration GCC6_REQUIRED=true
   - S2N_LIBCRYPTO=openssl-1.0.2-fips BUILD_S2N=true TESTS=integration GCC6_REQUIRED=true
   - S2N_LIBCRYPTO=libressl      BUILD_S2N=true TESTS=integration GCC6_REQUIRED=true
