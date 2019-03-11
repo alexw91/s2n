@@ -20,6 +20,8 @@ ifndef LIBCRYPTO_ROOT
 	export LIBCRYPTO_ROOT = $(shell echo "`pwd`/libcrypto-root")
 endif
 
+export S2N_ROOT=`pwd`
+export COVERAGE_DIR = $(shell echo "`pwd`/coverage")
 DIRS=$(wildcard */)
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
@@ -87,6 +89,17 @@ fuzz-linux : export S2N_UNSAFE_FUZZING_MODE = 1
 fuzz-linux : bin
 	$(MAKE) -C tests fuzz
 
+.PHONY : coverage
+coverage: 
+	$(MAKE) -C bin gcov lcov
+	$(MAKE) -C crypto gcov lcov
+	$(MAKE) -C error gcov lcov
+	$(MAKE) -C stuffer gcov lcov
+	$(MAKE) -C tests gcov lcov
+	$(MAKE) -C tls gcov lcov
+	$(MAKE) -C utils gcov lcov
+	
+
 .PHONY : indent
 indent:
 	$(MAKE) -C tests indentsource
@@ -110,3 +123,4 @@ clean:
 	$(MAKE) -C tls decruft
 	$(MAKE) -C bin decruft
 	$(MAKE) -C lib decruft
+	$(MAKE) -C coverage clean
