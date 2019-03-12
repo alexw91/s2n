@@ -66,7 +66,7 @@ if [[ "$TESTS" == "ALL" || "$TESTS" == "sawHMACFailure" ]]; then make -C tests/s
 if [[ "$TESTS" == "ALL" || "$TESTS" == "ctverif" ]]; then .travis/run_ctverif.sh "$CTVERIF_INSTALL_DIR" ; fi
 if [[ "$TESTS" == "ALL" || "$TESTS" == "sidetrail" ]]; then .travis/run_sidetrail.sh "$SIDETRAIL_INSTALL_DIR" ; fi
 
-# Upload Code Coverage Information to CodeCov.io
-if [[ -n "S2N_COVERAGE" ]]; then
-    bash <(curl -s https://codecov.io/bash);
+# Upload Code Coverage Information to CodeCov.io after Travis Build has completed
+if [[ (-n "${S2N_COVERAGE}") && (-n "${CODECOV_IO_UPLOAD}") ]]; then
+    bash <(curl -s https://codecov.io/bash -c -F ${TESTS});
 fi
