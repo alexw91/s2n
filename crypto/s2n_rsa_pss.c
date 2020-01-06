@@ -62,6 +62,12 @@ static int s2n_rsa_pss_size(const struct s2n_pkey *key)
     return EVP_PKEY_size(key->key.rsa_pss_key.pkey);
 }
 
+
+static void s2n_evp_md_meth_free(EVP_MD **digest_alg) {
+    if (digest_alg != NULL) {
+        EVP_MD_meth_free(*digest_alg);
+    }
+}
 /* On some versions of OpenSSL, "EVP_PKEY_CTX_set_signature_md()" is just a macro that casts digest_alg to "void*",
  * which fails to compile when the "-Werror=cast-qual" compiler flag is enabled. So we work around this OpenSSL
  * issue by creating a local non-const duplicate of EVP_MD pointer, calling OpenSSL with the duplicate, then freeing the
@@ -70,12 +76,11 @@ static int s2n_evp_ctx_set_signature_digest(EVP_PKEY_CTX *ctx, const EVP_MD* con
     notnull_check(ctx);
     notnull_check(const_digest_alg);
 
-    EVP_MD* digest_alg = EVP_MD_meth_dup(const_digest_alg);
+    DEFER_CLEANUP(EVP_MD *digest_alg = EVP_MD_meth_dup(const_digest_alg), s2n_evp_md_meth_free);
     notnull_check(digest_alg);
 
-    int rc = EVP_PKEY_CTX_set_signature_md(ctx, digest_alg);
-    EVP_MD_meth_free(digest_alg);
-    S2N_ERROR_IF(rc <= 0, s2n_err);
+    GUARD_OSSL(EVP_PKEY_CTX_set_signature_md(ctx, digest_alg), S2N_ERR_INVALID_SIGNATURE_ALGORITHM);
+    GUARD_OSSL(EVP_PKEY_CTX_set_rsa_mgf1_md(ctx, digest_alg), S2N_ERR_INVALID_SIGNATURE_ALGORITHM);
 
     return 0;
 }
