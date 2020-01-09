@@ -808,6 +808,18 @@ const struct s2n_cipher_preferences cipher_preferences_test_all_fips = {
     .minimum_protocol_version = S2N_TLS10,
 };
 
+static struct s2n_cipher_suite *s2n_rsa_pss_cipher_suites[] = {
+    &s2n_tls13_aes_128_gcm_sha256,                  /* 0x13,0x01 */
+    &s2n_tls13_aes_256_gcm_sha384,                  /* 0x13,0x02 */
+    &s2n_tls13_chacha20_poly1305_sha256,            /* 0x13,0x03 */
+};
+
+const struct s2n_cipher_preferences cipher_preferences_rsa_pss = {
+        .count = s2n_array_len(s2n_rsa_pss_cipher_suites),
+        .suites = s2n_rsa_pss_cipher_suites,
+        .minimum_protocol_version = S2N_TLS12,
+};
+
 /* All of the ECDSA cipher suites that s2n can negotiate, in order of IANA
  * value. Exposed for the "test_all_ecdsa" cipher preference list.
  */
@@ -1031,6 +1043,7 @@ static struct s2n_cert_chain_and_key *s2n_conn_get_compatible_cert_chain_and_key
 
 static int s2n_set_cipher_and_cert_as_server(struct s2n_connection *conn, uint8_t * wire, uint32_t count, uint32_t cipher_suite_len)
 {
+    fprintf(stderr, "Entered s2n_set_cipher_and_cert_as_server()\n");
     uint8_t renegotiation_info_scsv[S2N_TLS_CIPHER_SUITE_LEN] = { TLS_EMPTY_RENEGOTIATION_INFO_SCSV };
     struct s2n_cipher_suite *higher_vers_match = NULL;
     struct s2n_cert_chain_and_key *higher_vers_cert = NULL;
@@ -1043,6 +1056,7 @@ static int s2n_set_cipher_and_cert_as_server(struct s2n_connection *conn, uint8_
         uint8_t fallback_scsv[S2N_TLS_CIPHER_SUITE_LEN] = { TLS_FALLBACK_SCSV };
         if (s2n_wire_ciphers_contain(fallback_scsv, wire, count, cipher_suite_len)) {
             conn->closed = 1;
+            fprintf(stderr, "S2N_ERR_FALLBACK_DETECTED\n");
             S2N_ERROR(S2N_ERR_FALLBACK_DETECTED);
         }
     }
@@ -1055,14 +1069,29 @@ static int s2n_set_cipher_and_cert_as_server(struct s2n_connection *conn, uint8_
     const struct s2n_cipher_preferences *cipher_preferences;
     GUARD(s2n_connection_get_cipher_preferences(conn, &cipher_preferences));
 
+
+    fprintf(stderr, "CipherPrefList Count: %d\n", cipher_preferences->count);
+    fprintf(stderr, "Ciphers: ");
+
+    for (int i=0; i < cipher_preferences->count; i++) {
+        if (i > 0) {
+            fprintf(stderr, ", ");
+        }
+        fprintf(stderr, "%s", cipher_preferences->suites[i]->name);
+    }
+    fprintf(stderr, "\n");
+
     /* s2n supports only server order */
     for (int i = 0; i < cipher_preferences->count; i++) {
         conn->handshake_params.our_chain_and_key = NULL;
         const uint8_t *ours = cipher_preferences->suites[i]->iana_value;
+        fprintf(stderr, "Checking ServerPrefList[%d] = %s\n", i, cipher_preferences->suites[i]->name);
 
         if (s2n_wire_ciphers_contain(ours, wire, count, cipher_suite_len)) {
             /* We have a match */
             struct s2n_cipher_suite *match = s2n_cipher_suite_from_wire(ours);
+
+            fprintf(stderr, "Found Cipher in Client Pref List: %s\n", match->name);
 
             /* If connection is for SSLv3, use SSLv3 version of suites */
             if (conn->client_protocol_version == S2N_SSLv3) {
@@ -1071,6 +1100,7 @@ static int s2n_set_cipher_and_cert_as_server(struct s2n_connection *conn, uint8_
 
             /* Skip the suite if we don't have an available implementation */
             if (!match->available) {
+                fprintf(stderr, "Match not available\n");
                 continue;
             }
 
@@ -1079,16 +1109,19 @@ static int s2n_set_cipher_and_cert_as_server(struct s2n_connection *conn, uint8_
                 /* Skip the suite if it is not compatible with any certificates */
                 conn->handshake_params.our_chain_and_key = s2n_conn_get_compatible_cert_chain_and_key(conn, match);
                 if (!conn->handshake_params.our_chain_and_key) {
+                    fprintf(stderr, "!conn->handshake_params.our_chain_and_key\n");
                     continue;
                 }
 
                 /* If the kex is not supported continue to the next candidate */
                 if (!s2n_kex_supported(match, conn)) {
+                    fprintf(stderr, "!s2n_kex_supported(match, conn)\n");
                     continue;
                 }
 
                 /* If the kex is not configured correctly continue to the next candidate */
                 if (s2n_configure_kex(match, conn)) {
+                    fprintf(stderr, "!s2n_configure_kex(match, conn)\n");
                     continue;
                 }
             }
@@ -1099,9 +1132,11 @@ static int s2n_set_cipher_and_cert_as_server(struct s2n_connection *conn, uint8_
                     higher_vers_match = match;
                     higher_vers_cert = conn->handshake_params.our_chain_and_key;
                 }
+                fprintf(stderr, "conn->client_protocol_version < match->minimum_required_tls_version\n");
                 continue;
             }
 
+            fprintf(stderr, "Candidate Selected\n");
             conn->secure.cipher_suite = match;
             return 0;
         }

@@ -202,9 +202,9 @@ const struct s2n_signature_scheme* const s2n_supported_sig_scheme_pref_list[] = 
 /* As per RFC: This list MUST NOT contain any s2n_signature_scheme's with a non-null signature_curve defined. */
 const struct s2n_signature_scheme* const s2n_legacy_sig_scheme_pref_list[] = {
         /* RSA PSS - Commented out until Handshake can negotiate it */
-        /* &s2n_rsa_pss_pss_sha256, */
-        /* &s2n_rsa_pss_pss_sha384, */
-        /* &s2n_rsa_pss_pss_sha512, */
+        &s2n_rsa_pss_pss_sha256,
+        &s2n_rsa_pss_pss_sha384,
+        &s2n_rsa_pss_pss_sha512,
         /* &s2n_rsa_pss_rsae_sha256, */
         /* &s2n_rsa_pss_rsae_sha384, */
         /* &s2n_rsa_pss_rsae_sha512, */
@@ -228,6 +228,9 @@ const struct s2n_signature_scheme* const s2n_legacy_sig_scheme_pref_list[] = {
 /* This list MUST NOT contain any ECDSA s2n_signature_scheme's with a NULL signature_curve (except ECDSA_SHA1). */
 const struct s2n_signature_scheme * const s2n_tls13_sig_scheme_pref_list[] = {
         /* RSA PSS - Commented out until it is actually supported */
+        &s2n_rsa_pss_pss_sha256,
+        &s2n_rsa_pss_pss_sha384,
+        &s2n_rsa_pss_pss_sha512,
         /* &s2n_rsa_pss_rsae_sha256, */
         /* &s2n_rsa_pss_rsae_sha384, */
         /* &s2n_rsa_pss_rsae_sha512, */

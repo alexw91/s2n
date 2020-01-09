@@ -878,6 +878,7 @@ struct {
     { .version="test_all", .preferences=&cipher_preferences_test_all, .ecc_extension_required=0, .pq_kem_extension_required=0},
     { .version="test_all_fips", .preferences=&cipher_preferences_test_all_fips, .ecc_extension_required=0, .pq_kem_extension_required=0},
     { .version="test_all_ecdsa", .preferences=&cipher_preferences_test_all_ecdsa, .ecc_extension_required=0, .pq_kem_extension_required=0},
+    { .version="test_all_rsa_pss", .preferences=&cipher_preferences_test_all_ecdsa, .ecc_extension_required=1, .pq_kem_extension_required=0},
     { .version="test_ecdsa_priority", .preferences=&cipher_preferences_test_ecdsa_priority, .ecc_extension_required=0, .pq_kem_extension_required=0},
     { .version="test_tls13_null_key_exchange_alg", .preferences=&cipher_preferences_test_tls13_null_key_exchange_alg, .ecc_extension_required=0, .pq_kem_extension_required=0},
     { .version="null", .preferences=&cipher_preferences_null, .ecc_extension_required=0, .pq_kem_extension_required=0},
@@ -892,6 +893,19 @@ int s2n_find_cipher_pref_from_version(const char *version, const struct s2n_ciph
     for (int i = 0; selection[i].version != NULL; i++) {
         if (!strcasecmp(version, selection[i].version)) {
             *cipher_preferences = selection[i].preferences;
+            return 0;
+        }
+    }
+
+    S2N_ERROR(S2N_ERR_INVALID_CIPHER_PREFERENCES);
+}
+
+int s2n_get_version_from_cipher_pref(const struct s2n_cipher_preferences *cipher_preferences, const char **out) {
+    notnull_check(cipher_preferences);
+
+    for (int i = 0; selection[i].version != NULL; i++) {
+        if (selection[i].preferences == cipher_preferences) {
+            *out = selection[i].version;
             return 0;
         }
     }

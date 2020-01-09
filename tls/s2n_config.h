@@ -99,6 +99,7 @@ extern struct s2n_config *s2n_fetch_default_config(void);
 extern struct s2n_config *s2n_fetch_default_fips_config(void);
 extern struct s2n_config *s2n_fetch_unsafe_client_testing_config(void);
 extern struct s2n_config *s2n_fetch_unsafe_client_ecdsa_testing_config(void);
+extern struct s2n_config *s2n_fetch_unsafe_client_rsa_pss_testing_config(void);
 
 extern int s2n_config_init_session_ticket_keys(struct s2n_config *config);
 extern int s2n_config_free_session_ticket_keys(struct s2n_config *config);

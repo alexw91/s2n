@@ -58,6 +58,7 @@ extern const struct s2n_cipher_preferences elb_security_policy_fs_1_2_res_2019_0
 
 extern int s2n_cipher_preferences_init();
 extern int s2n_find_cipher_pref_from_version(const char *version, const struct s2n_cipher_preferences **cipher_preferences);
+extern int s2n_get_version_from_cipher_pref(const struct s2n_cipher_preferences *cipher_preferences, const char **out);
 extern int s2n_config_set_cipher_preferences(struct s2n_config *config, const char *version);
 extern int s2n_ecc_extension_required(const struct s2n_cipher_preferences *preferences);
 extern int s2n_pq_kem_extension_required(const struct s2n_cipher_preferences *preferences);

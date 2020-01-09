@@ -63,6 +63,7 @@ static int wall_clock(void *data, uint64_t *nanoseconds)
 static uint8_t default_config_init = 0;
 static uint8_t unsafe_client_testing_config_init = 0;
 static uint8_t unsafe_client_ecdsa_testing_config_init = 0;
+static uint8_t unsafe_client_rsa_pss_testing_config_init = 0;
 static uint8_t default_client_config_init = 0;
 static uint8_t default_fips_config_init = 0;
 
@@ -72,6 +73,7 @@ static struct s2n_config s2n_default_config = {0};
 static struct s2n_config s2n_unsafe_client_testing_config = {0};
 
 static struct s2n_config s2n_unsafe_client_ecdsa_testing_config = {0};
+static struct s2n_config s2n_unsafe_client_rsa_pss_testing_config = {0};
 
 static struct s2n_config default_client_config = {0};
 
@@ -265,6 +267,21 @@ struct s2n_config *s2n_fetch_unsafe_client_ecdsa_testing_config(void)
     }
 
     return &s2n_unsafe_client_ecdsa_testing_config;
+}
+
+struct s2n_config *s2n_fetch_unsafe_client_rsa_pss_testing_config(void)
+{
+    if (!unsafe_client_rsa_pss_testing_config_init) {
+        GUARD_PTR(s2n_config_init(&s2n_unsafe_client_rsa_pss_testing_config));
+        s2n_config_set_cipher_preferences(&s2n_unsafe_client_rsa_pss_testing_config, "test_all_rsa_pss");
+        s2n_unsafe_client_rsa_pss_testing_config.client_cert_auth_type = S2N_CERT_AUTH_NONE;
+        s2n_unsafe_client_rsa_pss_testing_config.check_ocsp = 0;
+        s2n_unsafe_client_rsa_pss_testing_config.disable_x509_validation = 1;
+
+        unsafe_client_rsa_pss_testing_config_init = 1;
+    }
+
+    return &s2n_unsafe_client_rsa_pss_testing_config;
 }
 
 struct s2n_config *s2n_fetch_default_client_config(void)
