@@ -23,6 +23,7 @@
 #include "crypto/s2n_hash.h"
 #include "crypto/s2n_openssl.h"
 #include "crypto/s2n_rsa.h"
+#include "crypto/s2n_rsa_pss.h"
 #include "crypto/s2n_pkey.h"
 
 #include "utils/s2n_blob.h"
@@ -30,10 +31,9 @@
 #include "utils/s2n_safety.h"
 #include "utils/s2n_blob.h"
 
-#define RSA_PSS_SIGN_VERIFY_RANDOM_BLOB_SIZE    32
-#define RSA_PSS_SIGN_VERIFY_SIGNATURE_SIZE      256
-
 #if RSA_PSS_SUPPORTED
+
+typedef const BIGNUM *(*ossl_get_rsa_pss_param_fn) (const RSA *d);
 
 const EVP_MD* s2n_hash_alg_to_evp_alg(s2n_hash_algorithm alg) {
     switch (alg) {
@@ -63,6 +63,21 @@ static int s2n_rsa_pss_size(const struct s2n_pkey *key)
 }
 
 
+static int s2n_rsa_pss_is_private_key(EVP_PKEY *pkey) {
+
+    RSA *rsa_key = EVP_PKEY_get0_RSA(pkey);
+
+    const BIGNUM *d = RSA_get0_d(rsa_key);
+    const BIGNUM *p = RSA_get0_p(rsa_key);
+    const BIGNUM *q = RSA_get0_q(rsa_key);
+
+    if (d || p || q) {
+        return 1;
+    }
+
+    return 0;
+}
+
 static void s2n_evp_md_meth_free(EVP_MD **digest_alg) {
     if (digest_alg != NULL) {
         EVP_MD_meth_free(*digest_alg);
@@ -85,9 +100,12 @@ static int s2n_evp_ctx_set_signature_digest(EVP_PKEY_CTX *ctx, const EVP_MD* con
     return 0;
 }
 
-static int s2n_rsa_pss_sign(const struct s2n_pkey *priv, struct s2n_hash_state *digest, struct s2n_blob *signature_out)
+int s2n_rsa_pss_sign(const struct s2n_pkey *priv, struct s2n_hash_state *digest, struct s2n_blob *signature_out)
 {
     notnull_check(priv);
+
+    /* Not Possible to Sign with Public Key */
+    S2N_ERROR_IF(!s2n_rsa_pss_is_private_key(priv->key.rsa_pss_key.pkey), S2N_ERR_KEY_MISMATCH);
 
     uint8_t digest_length;
     uint8_t digest_data[S2N_MAX_DIGEST_LEN];
@@ -118,9 +136,12 @@ static int s2n_rsa_pss_sign(const struct s2n_pkey *priv, struct s2n_hash_state *
     return 0;
 }
 
-static int s2n_rsa_pss_verify(const struct s2n_pkey *pub, struct s2n_hash_state *digest, struct s2n_blob *signature_in)
+int s2n_rsa_pss_verify(const struct s2n_pkey *pub, struct s2n_hash_state *digest, struct s2n_blob *signature_in)
 {
     notnull_check(pub);
+
+    /* Using Private Key to Verify means the public/private keys were likely swapped, and likely indicates a bug. */
+    S2N_ERROR_IF(s2n_rsa_pss_is_private_key(pub->key.rsa_pss_key.pkey), S2N_ERR_KEY_MISMATCH);
 
     uint8_t digest_length;
     uint8_t digest_data[S2N_MAX_DIGEST_LEN];
@@ -140,13 +161,7 @@ static int s2n_rsa_pss_verify(const struct s2n_pkey *pub, struct s2n_hash_state 
     return 0;
 }
 
-static int s2n_rsa_pss_keys_match(const struct s2n_pkey *pub, const struct s2n_pkey *priv)
-{
-    notnull_check(pub);
-    notnull_check(pub->key.rsa_pss_key.pkey);
-    notnull_check(priv);
-    notnull_check(priv->key.rsa_pss_key.pkey);
-
+static int s2n_rsa_pss_validate_sign_verify_match(const struct s2n_pkey *pub, const struct s2n_pkey *priv) {
     /* Generate a random blob to sign and verify */
     s2n_stack_blob(random_data, RSA_PSS_SIGN_VERIFY_RANDOM_BLOB_SIZE, RSA_PSS_SIGN_VERIFY_RANDOM_BLOB_SIZE);
     GUARD(s2n_get_private_random_data(&random_data));
@@ -164,7 +179,58 @@ static int s2n_rsa_pss_keys_match(const struct s2n_pkey *pub, const struct s2n_p
     /* Sign and Verify the Hash of the Random Blob */
     s2n_stack_blob(signature_data, RSA_PSS_SIGN_VERIFY_SIGNATURE_SIZE, RSA_PSS_SIGN_VERIFY_SIGNATURE_SIZE);
     GUARD(s2n_rsa_pss_sign(priv, &sign_hash, &signature_data));
-    GUARD(s2n_rsa_pss_verify(priv, &verify_hash, &signature_data));
+    GUARD(s2n_rsa_pss_verify(pub, &verify_hash, &signature_data));
+
+    return 0;
+}
+
+static int s2n_rsa_pss_validate_param_equal_if_present(const RSA *pub, const RSA *priv,
+                                                        ossl_get_rsa_pss_param_fn get_rsa_pss_param_fn) {
+    const BIGNUM *pub_val = get_rsa_pss_param_fn(pub);
+    const BIGNUM *priv_val = get_rsa_pss_param_fn(priv);
+
+    if (pub_val != NULL && priv_val != NULL) {
+        S2N_ERROR_IF(BN_cmp(pub_val, priv_val) != 0, S2N_ERR_KEY_MISMATCH);
+    }
+
+    return 0;
+}
+
+static int s2n_rsa_pss_validate_params_match(const struct s2n_pkey *pub, const struct s2n_pkey *priv) {
+    notnull_check(pub);
+    notnull_check(priv);
+
+    /* OpenSSL Documentation Links:
+     *  - https://www.openssl.org/docs/manmaster/man3/EVP_PKEY_get0_RSA.html
+     *  - https://www.openssl.org/docs/manmaster/man3/RSA_get0_pss_params.html
+     */
+    RSA *pub_rsa_key = EVP_PKEY_get0_RSA(pub->key.rsa_pss_key.pkey);
+    RSA *priv_rsa_key = EVP_PKEY_get0_RSA(priv->key.rsa_pss_key.pkey);
+
+    notnull_check(pub_rsa_key);
+    notnull_check(priv_rsa_key);
+
+    GUARD(s2n_rsa_pss_validate_param_equal_if_present(pub_rsa_key, priv_rsa_key, &RSA_get0_n));
+    GUARD(s2n_rsa_pss_validate_param_equal_if_present(pub_rsa_key, priv_rsa_key, &RSA_get0_e));
+    GUARD(s2n_rsa_pss_validate_param_equal_if_present(pub_rsa_key, priv_rsa_key, &RSA_get0_dmp1));
+    GUARD(s2n_rsa_pss_validate_param_equal_if_present(pub_rsa_key, priv_rsa_key, &RSA_get0_dmq1));
+    GUARD(s2n_rsa_pss_validate_param_equal_if_present(pub_rsa_key, priv_rsa_key, &RSA_get0_iqmp));
+
+    return 0;
+}
+
+
+static int s2n_rsa_pss_keys_match(const struct s2n_pkey *pub, const struct s2n_pkey *priv)
+{
+    notnull_check(pub);
+    notnull_check(pub->key.rsa_pss_key.pkey);
+    notnull_check(priv);
+    notnull_check(priv->key.rsa_pss_key.pkey);
+
+    GUARD(s2n_rsa_pss_validate_params_match(pub, priv));
+
+    /* Validate that verify(sign(message)) for a random message is verified correctly */
+    GUARD(s2n_rsa_pss_validate_sign_verify_match(pub, priv));
 
     return 0;
 }
@@ -189,13 +255,17 @@ static int s2n_rsa_pss_check_key_exists(const struct s2n_pkey *pkey)
 }
 
 int s2n_evp_pkey_to_rsa_pss_public_key(struct s2n_rsa_pss_key *rsa_pss_key, EVP_PKEY *pkey) {
+    S2N_ERROR_IF(s2n_rsa_pss_is_private_key(pkey), S2N_ERR_KEY_MISMATCH);
     GUARD_OSSL(EVP_PKEY_up_ref(pkey), S2N_ERR_KEY_INIT);
+
     rsa_pss_key->pkey = pkey;
     return 0;
 }
 
 int s2n_evp_pkey_to_rsa_pss_private_key(struct s2n_rsa_pss_key *rsa_pss_key, EVP_PKEY *pkey) {
+    S2N_ERROR_IF(!s2n_rsa_pss_is_private_key(pkey), S2N_ERR_KEY_MISMATCH);
     GUARD_OSSL(EVP_PKEY_up_ref(pkey), S2N_ERR_KEY_INIT);
+
     rsa_pss_key->pkey = pkey;
     return 0;
 }

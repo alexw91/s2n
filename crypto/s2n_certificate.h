@@ -80,6 +80,8 @@ int s2n_cert_set_cert_type(struct s2n_cert *cert, s2n_pkey_type pkey_type);
 int s2n_send_cert_chain(struct s2n_stuffer *out, struct s2n_cert_chain *chain);
 int s2n_send_empty_cert_chain(struct s2n_stuffer *out);
 int s2n_create_cert_chain_from_stuffer(struct s2n_cert_chain *cert_chain_out, struct s2n_stuffer *chain_in_stuffer);
+int s2n_cert_chain_and_key_set_cert_chain(struct s2n_cert_chain_and_key *cert_and_key, const char *cert_chain_pem);
+int s2n_cert_chain_and_key_set_private_key(struct s2n_cert_chain_and_key *cert_and_key, const char *private_key_pem);
 
 s2n_authentication_method s2n_cert_chain_and_key_get_auth_method(struct s2n_cert_chain_and_key *chain_and_key);
 

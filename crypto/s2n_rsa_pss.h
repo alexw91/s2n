@@ -24,6 +24,8 @@
 
 #if S2N_OPENSSL_VERSION_AT_LEAST(1, 1, 0) && !defined(LIBRESSL_VERSION_NUMBER)
 #define RSA_PSS_SUPPORTED 1
+#define RSA_PSS_SIGN_VERIFY_RANDOM_BLOB_SIZE    32
+#define RSA_PSS_SIGN_VERIFY_SIGNATURE_SIZE      256
 #else
 #define RSA_PSS_SUPPORTED 0
 #endif
@@ -40,5 +42,8 @@ struct s2n_rsa_pss_key {
 extern int s2n_rsa_pss_pkey_init(struct s2n_pkey *pkey);
 extern int s2n_evp_pkey_to_rsa_pss_public_key(struct s2n_rsa_pss_key *rsa_pss_key, EVP_PKEY *pkey);
 extern int s2n_evp_pkey_to_rsa_pss_private_key(struct s2n_rsa_pss_key *rsa_pss_key, EVP_PKEY *pkey);
+
+extern int s2n_rsa_pss_sign(const struct s2n_pkey *priv, struct s2n_hash_state *digest, struct s2n_blob *signature_out);
+extern int s2n_rsa_pss_verify(const struct s2n_pkey *pub, struct s2n_hash_state *digest, struct s2n_blob *signature_in);
 
 #endif
