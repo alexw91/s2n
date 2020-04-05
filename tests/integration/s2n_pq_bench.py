@@ -69,7 +69,7 @@ def main():
         expected_cipher = test_param_set["expected_cipher"]
         expected_kem = test_param_set["expected_kem"]
 
-        num_iters = 1000
+        num_iters = 10000
 
         wrapped = wrapper(do_pq_handshake, client_ciphers, server_ciphers, host, port, num_iters)
         print("\nCipher: %-37sKEM: %-20s" % (expected_cipher, expected_kem))
