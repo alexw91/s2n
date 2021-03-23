@@ -195,6 +195,12 @@ file(GLOB S2N_SRC
 add_library(${PROJECT_NAME} ${S2N_HEADERS} ${S2N_SRC})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 
+if(NOT S2N_NO_PQ)
+    # If s2n has PQ enabled, add a dependency on the static BIKE R3 library.  
+    target_link_libraries(s2n PUBLIC bike)
+endif()
+
+
 set(CMAKE_C_FLAGS_DEBUGOPT "")
 
 target_compile_options(${PROJECT_NAME} PRIVATE -pedantic -std=gnu99 -Wall -Werror -Wimplicit -Wunused -Wcomment -Wchar-subscripts
