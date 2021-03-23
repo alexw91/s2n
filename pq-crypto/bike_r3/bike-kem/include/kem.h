@@ -14,18 +14,18 @@
 ////////////////////////////////////////////////////////////////
 // Keygenerate - pk is the public key,
 //               sk is the private key,
-int crypto_kem_keypair(OUT unsigned char *pk, OUT unsigned char *sk);
+int BIKE1_L1_R3_crypto_kem_keypair(OUT unsigned char *pk, OUT unsigned char *sk);
 
 // Encapsulate - pk is the public key,
 //               ct is a key encapsulation message (ciphertext),
 //               ss is the shared secret.
-int crypto_kem_enc(OUT unsigned char *     ct,
+int BIKE1_L1_R3_crypto_kem_enc(OUT unsigned char *     ct,
                    OUT unsigned char *     ss,
                    IN const unsigned char *pk);
 
 // Decapsulate - ct is a key encapsulation message (ciphertext),
 //               sk is the private key,
 //               ss is the shared secret
-int crypto_kem_dec(OUT unsigned char *     ss,
+int BIKE1_L1_R3_crypto_kem_dec(OUT unsigned char *     ss,
                    IN const unsigned char *ct,
                    IN const unsigned char *sk);

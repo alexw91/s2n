@@ -62,7 +62,7 @@ int main()
     printf("Code test: %lu\n", i);
 
     // Key generation
-    MEASURE("  keypair", res = crypto_kem_keypair(pk.val, sk.val););
+    MEASURE("  keypair", res = BIKE1_L1_R3_crypto_kem_keypair(pk.val, sk.val););
 
     if(res != 0) {
       printf("Keypair failed with error: %d\n", res);
@@ -72,14 +72,14 @@ int main()
     uint32_t dec_rc = 0;
 
     // Encapsulate
-    MEASURE("  encaps", res = crypto_kem_enc(ct.val, k_enc.val, pk.val););
+    MEASURE("  encaps", res = BIKE1_L1_R3_crypto_kem_enc(ct.val, k_enc.val, pk.val););
     if(res != 0) {
       printf("encapsulate failed with error: %d\n", res);
       continue;
     }
 
     // Decapsulate
-    MEASURE("  decaps", dec_rc = crypto_kem_dec(k_dec.val, ct.val, sk.val););
+    MEASURE("  decaps", dec_rc = BIKE1_L1_R3_crypto_kem_dec(k_dec.val, ct.val, sk.val););
 
     // Check test status
     if(dec_rc != 0) {

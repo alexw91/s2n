@@ -112,7 +112,7 @@ main()
     randombytes_init(seed, NULL, 256);
 
     // Generate the public/private keypair
-    if((ret_val = crypto_kem_keypair(pk, sk)) != 0)
+    if((ret_val = BIKE1_L1_R3_crypto_kem_keypair(pk, sk)) != 0)
     {
       printf("crypto_kem_keypair returned <%d>\n", ret_val);
       fclose(fp_req);
@@ -122,7 +122,7 @@ main()
     fprintBstr(fp_rsp, "pk = ", pk, CRYPTO_PUBLICKEYBYTES);
     fprintBstr(fp_rsp, "sk = ", sk, CRYPTO_SECRETKEYBYTES);
 
-    if((ret_val = crypto_kem_enc(ct, ss, pk)) != 0)
+    if((ret_val = BIKE1_L1_R3_crypto_kem_enc(ct, ss, pk)) != 0)
     {
       printf("crypto_kem_enc returned <%d>\n", ret_val);
       fclose(fp_req);
@@ -134,7 +134,7 @@ main()
 
     fprintf(fp_rsp, "\n");
 
-    if((ret_val = crypto_kem_dec(ss1, ct, sk)) != 0)
+    if((ret_val = BIKE1_L1_R3_crypto_kem_dec(ss1, ct, sk)) != 0)
     {
       printf("crypto_kem_dec returned <%d>\n", ret_val);
       fclose(fp_req);
