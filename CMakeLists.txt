@@ -63,10 +63,7 @@ else()
         "pq-crypto/kyber_r2/*.c"
         "pq-crypto/kyber_90s_r2/*.c")
         
-    # BIKE R3 builds a libbike.a static library using CMake
     add_subdirectory("pq-crypto/bike_r3/bike-kem")
-    #target_link_libraries(s2n PUBLIC bike)
-    #add_dependencies(s2n bike)
 endif()
 
 ##be nice to visual studio users
@@ -197,7 +194,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 
 if(NOT S2N_NO_PQ)
     # If s2n has PQ enabled, add a dependency on the static BIKE R3 library.  
-    target_link_libraries(s2n PUBLIC bike)
+    target_link_libraries(s2n PUBLIC bike_r3)
 endif()
 
 

@@ -9,6 +9,6 @@
 # permissions and limitations under the License.
 #
 
-
-.PHONY : libs
-libs:
+.PHONY : all
+all:
+	./build_with_cmake.sh

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(bike C)
+project(bike_r3 C)
 
 set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
