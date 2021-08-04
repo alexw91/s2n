@@ -60,9 +60,12 @@ static int s2n_is_signature_scheme_usable(struct s2n_connection *conn, const str
     POSIX_ENSURE_REF(conn);
     POSIX_ENSURE_REF(candidate);
 
+    //fprintf(stdout, "Checking if SigScheme is valid to accept..\n");
     POSIX_GUARD(s2n_signature_scheme_valid_to_accept(conn, candidate));
+    //fprintf(stdout, "Checking if SigScheme is valid for auth..\n");
     POSIX_GUARD(s2n_is_sig_scheme_valid_for_auth(conn, candidate));
 
+    //fprintf(stdout, "SigScheme is usable!\n");
     return S2N_SUCCESS;
 }
 
@@ -99,8 +102,9 @@ static int s2n_choose_sig_scheme(struct s2n_connection *conn, struct s2n_sig_sch
 }
 
 /* similar to s2n_choose_sig_scheme() without matching client's preference */
-static int s2n_tls13_default_sig_scheme(struct s2n_connection *conn, struct s2n_signature_scheme *chosen_scheme_out)
+int s2n_tls13_default_sig_scheme(struct s2n_connection *conn, struct s2n_signature_scheme *chosen_scheme_out)
 {
+    //fprintf(stdout, "Entered s2n_tls13_default_sig_scheme()\n");
     POSIX_ENSURE_REF(conn);
     const struct s2n_signature_preferences *signature_preferences = NULL;
     POSIX_GUARD(s2n_connection_get_signature_preferences(conn, &signature_preferences));
@@ -109,17 +113,28 @@ static int s2n_tls13_default_sig_scheme(struct s2n_connection *conn, struct s2n_
     struct s2n_cipher_suite *cipher_suite = conn->secure.cipher_suite;
     POSIX_ENSURE_REF(cipher_suite);
 
+    s2n_authentication_method cipher_suite_auth_method = cipher_suite->auth_method;
+
+    /* This method should only be called when TLS 1.3 is negotiated. */
+    POSIX_ENSURE(conn->actual_protocol_version == S2N_TLS13, S2N_ERR_PROTOCOL_VERSION_UNSUPPORTED);
+    POSIX_ENSURE(cipher_suite_auth_method == S2N_AUTHENTICATION_METHOD_TLS13, S2N_ERR_INVALID_SIGNATURE_ALGORITHMS_PREFERENCES);
+
+    //fprintf(stdout, "Negotiated Ciphersuite: %s\n", cipher_suite->name);
     for (size_t i = 0; i < signature_preferences->count; i++) {
         const struct s2n_signature_scheme *candidate = signature_preferences->signature_schemes[i];
+        //fprintf(stdout, "Checking Signature Algorithm Candidate [%d/%d]: IANA: 0x%04x\n", (int)(i+1), signature_preferences->count, candidate->iana_value);
 
         if (s2n_is_signature_scheme_usable(conn, candidate) != S2N_SUCCESS) {
+            //fprintf(stdout, "Skipping, algorithm not usable.\n");
             continue;
         }
 
+        //fprintf(stdout, "Candidate Chosen!\n");
         *chosen_scheme_out = *candidate;
         return S2N_SUCCESS;
     }
 
+    //fprintf(stdout, "No Candidates Meet Requirements!\n");
     POSIX_BAIL(S2N_ERR_INVALID_SIGNATURE_SCHEME);
 }
 
@@ -135,8 +150,9 @@ int s2n_get_and_validate_negotiated_signature_scheme(struct s2n_connection *conn
 
     for (size_t i = 0; i < signature_preferences->count; i++) {
         const struct s2n_signature_scheme *candidate = signature_preferences->signature_schemes[i];
-
+        ////fprintf(stdout, "Checking Signature Algorithm [%d/%d]: IANA: %d\n", (int)(i+1), signature_preferences->count, candidate->iana_value);
         if (0 != s2n_signature_scheme_valid_to_accept(conn, candidate)) {
+            ////fprintf(stdout, "Skipping, Not valid to accept.\n");
             continue;
         }
 
@@ -171,6 +187,10 @@ int s2n_choose_default_sig_scheme(struct s2n_connection *conn, struct s2n_signat
 
     s2n_authentication_method cipher_suite_auth_method = conn->secure.cipher_suite->auth_method;
 
+    /* This method should only be called when TLS 1.2 or less is negotiated. */
+    POSIX_ENSURE(conn->actual_protocol_version < S2N_TLS13, S2N_ERR_PROTOCOL_VERSION_UNSUPPORTED);
+    POSIX_ENSURE(cipher_suite_auth_method != S2N_AUTHENTICATION_METHOD_TLS13, S2N_ERR_INVALID_SIGNATURE_ALGORITHMS_PREFERENCES);
+
     /* Default our signature digest algorithms. For TLS 1.2 this default is different and may be
      * overridden by the signature_algorithms extension. If the server chooses an ECDHE_ECDSA
      * cipher suite, this will be overridden to SHA1.
@@ -182,7 +202,7 @@ int s2n_choose_default_sig_scheme(struct s2n_connection *conn, struct s2n_signat
     }
 
     /* Default RSA Hash Algorithm is SHA1 (instead of MD5_SHA1) if TLS 1.2 or FIPS mode */
-    if ((conn->actual_protocol_version >= S2N_TLS12 || s2n_is_in_fips_mode())
+    if ((conn->actual_protocol_version == S2N_TLS12 || s2n_is_in_fips_mode())
             && (sig_scheme_out->sig_alg == S2N_SIGNATURE_RSA)) {
         *sig_scheme_out = s2n_rsa_pkcs1_sha1;
     }

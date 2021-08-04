@@ -109,9 +109,10 @@ static int s2n_certs_exist_for_sig_scheme(struct s2n_connection *conn, const str
 {
     POSIX_ENSURE_REF(sig_scheme);
 
-    s2n_pkey_type cert_type;
+    s2n_pkey_type cert_type = S2N_PKEY_TYPE_UNKNOWN;
     POSIX_GUARD(s2n_get_cert_type_for_sig_alg(sig_scheme->sig_alg, &cert_type));
 
+    //fprintf(stdout, "s2n_pkey_type for Sig Alg: %d\n", cert_type);
     /* A valid cert must exist for the authentication method. */
     struct s2n_cert_chain_and_key *cert = s2n_get_compatible_cert_chain_and_key(conn, cert_type);
     POSIX_ENSURE_REF(cert);
@@ -180,11 +181,15 @@ int s2n_is_sig_scheme_valid_for_auth(struct s2n_connection *conn, const struct s
     struct s2n_cipher_suite *cipher_suite = conn->secure.cipher_suite;
     POSIX_ENSURE_REF(cipher_suite);
 
+    //fprintf(stdout, "Checking if Certificates exist for SigScheme..\n");
     POSIX_GUARD(s2n_certs_exist_for_sig_scheme(conn, sig_scheme));
+    //fprintf(stdout, "Certificates do exist for SigScheme!\n");
 
     /* For the client side, signature algorithm does not need to match the cipher suite. */
     if (conn->mode == S2N_SERVER) {
+        //fprintf(stdout, "Checking if Signature Alg is valid for Cipher...\n");
         POSIX_GUARD(s2n_is_sig_alg_valid_for_cipher_suite(sig_scheme->sig_alg, cipher_suite));
+        //fprintf(stdout, "Signature Alg is valid for Cipher!\n");
     }
     return S2N_SUCCESS;
 }
