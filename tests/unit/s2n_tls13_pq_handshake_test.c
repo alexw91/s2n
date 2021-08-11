@@ -210,6 +210,10 @@ int s2n_test_tls13_pq_handshake(const struct s2n_security_policy *client_sec_pol
 int main() {
     BEGIN_TEST();
 
+    if (!s2n_libcrypto_supports_tls13()) {
+        END_TEST();
+    }
+
     /* Additional KEM preferences/security policies to test against. These policies can only be used
      * as the server's policy in this test: when generating the ClientHello, the client relies on
      * the security_policy_selection[] array (in s2n_security_policies.c) to determine if it should

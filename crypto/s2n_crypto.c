@@ -17,6 +17,7 @@
 
 #include "api/s2n.h"
 #include "crypto/s2n_crypto.h"
+#include "crypto/s2n_rsa_signing.h"
 
 /* OPENSSL_free is defined within <openssl/crypto.h> for OpenSSL Libcrypto
  * and within <openssl/mem.h> for AWS_LC and BoringSSL */
@@ -25,6 +26,20 @@
 #else 
 #include <openssl/crypto.h>
 #endif
+
+bool s2n_libcrypto_supports_tls13() {
+    /* RSA PSS signing is mandatory to implement if TLfS 1.3 is offered or negotiated, if the version of libcrypto being
+     * used doesn't support RSA PSS, then TLS 1.3 can not be used. https://datatracker.ietf.org/doc/html/rfc8446#page-44 */
+    return s2n_is_rsa_pss_signing_supported();
+}
+
+int s2n_libcrypto_max_supported_tls_version() {
+    if (s2n_libcrypto_supports_tls13()) {
+        return S2N_TLS13;
+    } else {
+        return S2N_TLS12;
+    }
+}
 
 int s2n_crypto_free(uint8_t** data)
 {

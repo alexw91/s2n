@@ -16,11 +16,15 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <openssl/aes.h>
 #include <openssl/rc4.h>
 #include <openssl/des.h>
 #include <openssl/rsa.h>
 #include <openssl/dh.h>
+
+bool s2n_libcrypto_supports_tls13();
+int s2n_libcrypto_max_supported_tls_version();
 
 int s2n_crypto_free(uint8_t** data);

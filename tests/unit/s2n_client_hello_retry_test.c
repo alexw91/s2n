@@ -39,6 +39,10 @@ int main(int argc, char **argv)
 {
     BEGIN_TEST();
 
+    if (!s2n_libcrypto_supports_tls13()) {
+        END_TEST();
+    }
+
     EXPECT_SUCCESS(s2n_enable_tls13());
 
     /* Test s2n_server_hello_retry_recv */

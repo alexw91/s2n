@@ -522,7 +522,7 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_config_add_cert_chain_and_key_to_store(non_quic_config, chain_and_key));
 
         /* Succeeds when negotiating TLS1.3 */
-        {
+        if (s2n_libcrypto_supports_tls13()) {
             struct s2n_connection *client_conn = s2n_connection_new(S2N_CLIENT);
             EXPECT_SUCCESS(s2n_connection_set_config(client_conn, non_quic_config));
 
@@ -537,8 +537,8 @@ int main(int argc, char **argv)
                     &client_conn->handshake.io, s2n_stuffer_data_available(&server_conn->handshake.io)));
             EXPECT_SUCCESS(s2n_server_hello_recv(client_conn));
 
-            EXPECT_EQUAL(client_conn->actual_protocol_version, S2N_TLS13);
-            EXPECT_EQUAL(server_conn->actual_protocol_version, S2N_TLS13);
+            EXPECT_EQUAL(client_conn->actual_protocol_version, s2n_libcrypto_max_supported_tls_version());
+            EXPECT_EQUAL(server_conn->actual_protocol_version, s2n_libcrypto_max_supported_tls_version());
 
             EXPECT_SUCCESS(s2n_connection_free(client_conn));
             EXPECT_SUCCESS(s2n_connection_free(server_conn));
@@ -605,16 +605,18 @@ int main(int argc, char **argv)
                     &client_conn->handshake.io, s2n_stuffer_data_available(&server_conn->handshake.io)));
             EXPECT_SUCCESS(s2n_server_hello_recv(client_conn));
 
-            EXPECT_EQUAL(client_conn->early_data_state, S2N_EARLY_DATA_REQUESTED);
-            EXPECT_EQUAL(client_conn->server_protocol_version, S2N_TLS13);
-            EXPECT_EQUAL(server_conn->actual_protocol_version, S2N_TLS13);
+            if (s2n_libcrypto_supports_tls13()) {
+                EXPECT_EQUAL(client_conn->early_data_state, S2N_EARLY_DATA_REQUESTED);
+            }
+            EXPECT_EQUAL(client_conn->server_protocol_version, s2n_libcrypto_max_supported_tls_version());
+            EXPECT_EQUAL(server_conn->actual_protocol_version, s2n_libcrypto_max_supported_tls_version());
 
             EXPECT_SUCCESS(s2n_connection_free(client_conn));
             EXPECT_SUCCESS(s2n_connection_free(server_conn));
         }
 
         /* Fails when negotiating TLS1.2 */
-        {
+        if (s2n_libcrypto_supports_tls13()) {
             struct s2n_connection *client_conn = s2n_connection_new(S2N_CLIENT);
             EXPECT_SUCCESS(s2n_connection_set_config(client_conn, config));
             EXPECT_SUCCESS(s2n_connection_set_cipher_preferences(client_conn, "test_all"));
@@ -635,6 +637,7 @@ int main(int argc, char **argv)
             EXPECT_FAILURE_WITH_ERRNO(s2n_server_hello_recv(client_conn), S2N_ERR_PROTOCOL_VERSION_UNSUPPORTED);
 
             EXPECT_EQUAL(client_conn->early_data_state, S2N_EARLY_DATA_REQUESTED);
+
             EXPECT_EQUAL(client_conn->server_protocol_version, S2N_TLS12);
             EXPECT_EQUAL(server_conn->actual_protocol_version, S2N_TLS12);
 

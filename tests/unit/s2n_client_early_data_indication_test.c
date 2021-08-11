@@ -36,6 +36,10 @@ int main(int argc, char **argv)
 {
     BEGIN_TEST();
 
+    if (!s2n_libcrypto_supports_tls13()) {
+        END_TEST();
+    }
+
     /* Test s2n_client_early_data_indication_should_send */
     {
         /* Safety check */

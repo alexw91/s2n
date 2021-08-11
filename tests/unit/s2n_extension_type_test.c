@@ -431,7 +431,7 @@ int main()
         }
 
         /* Functional test: minimum-TLS1.3 extensions only used for TLS1.3 */
-        {
+        if (s2n_libcrypto_supports_tls13()) {
             struct s2n_cert_chain_and_key *cert_chain = NULL;
             EXPECT_SUCCESS(s2n_test_cert_chain_and_key_new(&cert_chain,
                     S2N_DEFAULT_ECDSA_TEST_CERT_CHAIN, S2N_DEFAULT_ECDSA_TEST_PRIVATE_KEY));

@@ -45,6 +45,10 @@ int main()
 {
     BEGIN_TEST();
 
+    if (!s2n_libcrypto_supports_tls13()) {
+        END_TEST();
+    }
+
     const uint8_t test_psk_data[] = "very secret";
     DEFER_CLEANUP(struct s2n_psk *test_psk = s2n_external_psk_new(), s2n_psk_free);
     EXPECT_SUCCESS(s2n_psk_set_identity(test_psk, test_psk_data, sizeof(test_psk_data)));
@@ -75,8 +79,8 @@ int main()
             struct s2n_connection *client_conn = NULL, *server_conn = NULL;
             EXPECT_OK(s2n_get_test_client_and_server(&client_conn, &server_conn, config));
 
-            EXPECT_OK(s2n_negotiate_test_server_and_client_until_message(server_conn, client_conn,
-                    SERVER_KEY));
+            EXPECT_OK(s2n_negotiate_test_server_and_client_until_message(server_conn, client_conn, SERVER_KEY));
+
             EXPECT_EQUAL(s2n_conn_get_current_message_type(client_conn), APPLICATION_DATA);
             EXPECT_EQUAL(s2n_conn_get_current_message_type(server_conn), APPLICATION_DATA);
 

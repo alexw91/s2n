@@ -65,13 +65,12 @@ int main(int argc, char **argv)
         if (has_tls_13_cipher) {
             /* Validate that s2n_tls13_default_sig_scheme() is successful on all TLS 1.3 Security Policies for all
              * TLS 1.3 Ciphers */
-            {
+            if (s2n_libcrypto_supports_tls13()) {
                 struct s2n_cipher_suite tls_13_ciphers[] = { s2n_tls13_aes_128_gcm_sha256,
                                                              s2n_tls13_aes_256_gcm_sha384,
                                                              s2n_tls13_chacha20_poly1305_sha256 };
 
                 for (int i = 0; i < s2n_array_len(tls_13_ciphers); i ++) {
-                    //fprintf(stdout, "\n\nTesting Policy: %s\n", security_policy_selection[policy_index].version);
                     char *cert_chain;
                     char *private_key;
                     struct s2n_cert_chain_and_key *default_cert;
@@ -92,7 +91,6 @@ int main(int argc, char **argv)
                     EXPECT_NOT_NULL(client_conn);
                     EXPECT_NOT_NULL(server_conn);
 
-
                     EXPECT_SUCCESS(s2n_config_set_cipher_preferences(config, security_policy_selection[policy_index].version));
                     EXPECT_SUCCESS(s2n_config_set_verification_ca_location(config, S2N_DEFAULT_TEST_CERT_CHAIN, NULL));
                     EXPECT_NOT_NULL(config->default_certs_by_type.certs[S2N_PKEY_TYPE_RSA]);
@@ -109,8 +107,6 @@ int main(int argc, char **argv)
 
                     EXPECT_SUCCESS(s2n_tls13_default_sig_scheme(client_conn, &chosen_scheme));
                     EXPECT_SUCCESS(s2n_tls13_default_sig_scheme(server_conn, &chosen_scheme));
-
-                    //fprintf(stdout, "Freeing Resources...\n");
 
                     EXPECT_SUCCESS(s2n_connection_free(client_conn));
                     EXPECT_SUCCESS(s2n_connection_free(server_conn));

@@ -384,7 +384,7 @@ int main(int argc, char **argv)
          *# compute partial hash transcripts for multiple hashes in the second
          *# ClientHello.
          */
-        {
+        if (s2n_libcrypto_supports_tls13()) {
             struct s2n_connection *conn;
             EXPECT_NOT_NULL(conn = s2n_connection_new(S2N_CLIENT));
             conn->handshake.handshake_type = HELLO_RETRY_REQUEST;

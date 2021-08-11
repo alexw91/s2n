@@ -143,6 +143,11 @@ static int s2n_test_secret_handler(void* context, struct s2n_connection *conn,
 int main(int argc, char **argv)
 {
     BEGIN_TEST();
+
+    if (!s2n_libcrypto_supports_tls13()) {
+        END_TEST();
+    }
+
     EXPECT_SUCCESS(s2n_enable_tls13());
 
     /* Test: TLS 1.3 key and secrets generation is symmetrical */

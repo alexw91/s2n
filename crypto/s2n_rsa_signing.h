@@ -34,4 +34,4 @@ int s2n_rsa_pkcs1v15_verify(const struct s2n_pkey *pub, struct s2n_hash_state *d
 int s2n_rsa_pss_sign(const struct s2n_pkey *priv, struct s2n_hash_state *digest, struct s2n_blob *signature_out);
 int s2n_rsa_pss_verify(const struct s2n_pkey *pub, struct s2n_hash_state *digest, struct s2n_blob *signature_in);
 
-int s2n_is_rsa_pss_signing_supported();
+bool s2n_is_rsa_pss_signing_supported();

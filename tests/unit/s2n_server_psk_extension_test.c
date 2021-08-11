@@ -258,7 +258,7 @@ int main(int argc, char **argv)
     }
 
     /* Functional test */
-    {
+    if (s2n_libcrypto_supports_tls13()) {
         /* Setup connections */
         EXPECT_SUCCESS(s2n_enable_tls13());
         struct s2n_connection *client_conn, *server_conn;

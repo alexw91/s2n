@@ -266,6 +266,10 @@ int s2n_process_client_hello(struct s2n_connection *conn)
     const struct s2n_security_policy *security_policy;
     POSIX_GUARD(s2n_connection_get_security_policy(conn, &security_policy));
 
+    /* Ensure we don't exceed the max version that our libcrypto supports */
+    conn->server_protocol_version = MIN(conn->server_protocol_version, s2n_libcrypto_max_supported_tls_version());
+    conn->actual_protocol_version = MIN(conn->server_protocol_version, s2n_libcrypto_max_supported_tls_version());
+
     /* Ensure that highest supported version is set correctly */
     if (!s2n_security_policy_supports_tls13(security_policy)) {
         conn->server_protocol_version = MIN(conn->server_protocol_version, S2N_TLS12);
@@ -383,6 +387,10 @@ int s2n_client_hello_send(struct s2n_connection *conn)
 
     const struct s2n_cipher_preferences *cipher_preferences = security_policy->cipher_preferences;
     POSIX_ENSURE_REF(cipher_preferences);
+
+    /* Ensure we don't exceed the max version that our libcrypto supports */
+    conn->client_protocol_version = MIN(conn->client_protocol_version, s2n_libcrypto_max_supported_tls_version());
+    conn->actual_protocol_version = MIN(conn->actual_protocol_version, s2n_libcrypto_max_supported_tls_version());
 
     /* Check whether cipher preference supports TLS 1.3. If it doesn't,
        our highest supported version is S2N_TLS12 */

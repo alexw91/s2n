@@ -113,28 +113,46 @@ int s2n_tls13_default_sig_scheme(struct s2n_connection *conn, struct s2n_signatu
     struct s2n_cipher_suite *cipher_suite = conn->secure.cipher_suite;
     POSIX_ENSURE_REF(cipher_suite);
 
-    s2n_authentication_method cipher_suite_auth_method = cipher_suite->auth_method;
-
     /* This method should only be called when TLS 1.3 is negotiated. */
-    POSIX_ENSURE(conn->actual_protocol_version == S2N_TLS13, S2N_ERR_PROTOCOL_VERSION_UNSUPPORTED);
-    POSIX_ENSURE(cipher_suite_auth_method == S2N_AUTHENTICATION_METHOD_TLS13, S2N_ERR_INVALID_SIGNATURE_ALGORITHMS_PREFERENCES);
+//    s2n_authentication_method cipher_suite_auth_method = cipher_suite->auth_method;
+//    POSIX_ENSURE(conn->actual_protocol_version == S2N_TLS13, S2N_ERR_PROTOCOL_VERSION_UNSUPPORTED);
+//    POSIX_ENSURE(cipher_suite_auth_method == S2N_AUTHENTICATION_METHOD_TLS13, S2N_ERR_INVALID_SIGNATURE_ALGORITHMS_PREFERENCES);
 
-    //fprintf(stdout, "Negotiated Ciphersuite: %s\n", cipher_suite->name);
+//    fprintf(stdout, "Negotiated Ciphersuite: %s\n", cipher_suite->name);
     for (size_t i = 0; i < signature_preferences->count; i++) {
         const struct s2n_signature_scheme *candidate = signature_preferences->signature_schemes[i];
-        //fprintf(stdout, "Checking Signature Algorithm Candidate [%d/%d]: IANA: 0x%04x\n", (int)(i+1), signature_preferences->count, candidate->iana_value);
+//        fprintf(stdout, "Checking Signature Algorithm Candidate [%d/%d]: IANA: 0x%04x\n", (int)(i+1), signature_preferences->count, candidate->iana_value);
 
         if (s2n_is_signature_scheme_usable(conn, candidate) != S2N_SUCCESS) {
-            //fprintf(stdout, "Skipping, algorithm not usable.\n");
+//            fprintf(stdout, "Skipping, algorithm not usable.\n");
             continue;
         }
 
-        //fprintf(stdout, "Candidate Chosen!\n");
+//        fprintf(stdout, "Candidate Chosen!\n");
         *chosen_scheme_out = *candidate;
         return S2N_SUCCESS;
     }
 
-    //fprintf(stdout, "No Candidates Meet Requirements!\n");
+    /****************
+     * DEBUG BEGIN
+     ****************/
+//    fprintf(stdout, "\n\nNo Candidates Meet Requirements!\n");
+//    if (conn->mode == S2N_CLIENT) {
+//        fprintf(stdout, "Conn Mode: Client\n");
+//    } else {
+//        fprintf(stdout, "Conn Mode: Server\n");
+//    }
+//    fprintf(stdout, "Negotiated Ciphersuite: %s\n", cipher_suite->name);
+//    fprintf(stdout, "TLS Version: %d\n", conn->actual_protocol_version);
+//
+//    for (size_t i = 0; i < signature_preferences->count; i++) {
+//        const struct s2n_signature_scheme *candidate = signature_preferences->signature_schemes[i];
+//        fprintf(stdout, "Signature Algorithm Candidate [%d/%d]: IANA: 0x%04x\n", (int)(i+1), signature_preferences->count, candidate->iana_value);
+//    }
+
+    /****************
+     * DEBUG END
+     ****************/
     POSIX_BAIL(S2N_ERR_INVALID_SIGNATURE_SCHEME);
 }
 
@@ -185,11 +203,18 @@ int s2n_choose_default_sig_scheme(struct s2n_connection *conn, struct s2n_signat
     POSIX_ENSURE_REF(conn->secure.cipher_suite);
     POSIX_ENSURE_REF(sig_scheme_out);
 
+    /* If we are a server, then we are picking */
+
+//    if (conn->actual_protocol_version == S2N_TLS13) {
+//        POSIX_GUARD(s2n_tls13_default_sig_scheme(conn, sig_scheme_out));
+//        return S2N_SUCCESS;
+//    }
+
     s2n_authentication_method cipher_suite_auth_method = conn->secure.cipher_suite->auth_method;
 
     /* This method should only be called when TLS 1.2 or less is negotiated. */
-    POSIX_ENSURE(conn->actual_protocol_version < S2N_TLS13, S2N_ERR_PROTOCOL_VERSION_UNSUPPORTED);
-    POSIX_ENSURE(cipher_suite_auth_method != S2N_AUTHENTICATION_METHOD_TLS13, S2N_ERR_INVALID_SIGNATURE_ALGORITHMS_PREFERENCES);
+//    POSIX_ENSURE(conn->actual_protocol_version < S2N_TLS13, S2N_ERR_PROTOCOL_VERSION_UNSUPPORTED);
+//    POSIX_ENSURE(cipher_suite_auth_method != S2N_AUTHENTICATION_METHOD_TLS13, S2N_ERR_INVALID_SIGNATURE_ALGORITHMS_PREFERENCES);
 
     /* Default our signature digest algorithms. For TLS 1.2 this default is different and may be
      * overridden by the signature_algorithms extension. If the server chooses an ECDHE_ECDSA

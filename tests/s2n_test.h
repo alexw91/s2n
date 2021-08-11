@@ -48,6 +48,7 @@ int test_count;
     EXPECT_SUCCESS_WITHOUT_COUNT(s2n_in_unit_test_set(true));  \
     S2N_TEST_OPTIONALLY_ENABLE_FIPS_MODE();                    \
     EXPECT_SUCCESS_WITHOUT_COUNT(s2n_init());                  \
+    EXPECT_SUCCESS_WITHOUT_COUNT(s2n_disable_tls13());         \
     fprintf(stdout, "Running %-50s ... ", __FILE__);           \
   } while(0)
 
