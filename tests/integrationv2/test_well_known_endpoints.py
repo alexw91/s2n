@@ -11,6 +11,7 @@ from utils import invalid_test_parameters, get_parameter_name, to_bytes
 
 ENDPOINTS = [
     "amazon.com",
+    "www.amazon.com",
     "facebook.com",
     "google.com",
     "netflix.com",
@@ -24,6 +25,7 @@ ENDPOINTS = [
 CIPHERS = [
     None,  # `None` will default to the appropriate `test_all` cipher preference in the S2N client provider
     Ciphers.KMS_PQ_TLS_1_0_2019_06,
+    Ciphers.AWS_CRT_SDK_TLS_1_0,
     Ciphers.PQ_SIKE_TEST_TLS_1_0_2019_11,
     Ciphers.KMS_PQ_TLS_1_0_2020_07,
     Ciphers.KMS_PQ_TLS_1_0_2020_02,

@@ -255,6 +255,7 @@ class Ciphers(object):
     ECDHE_RSA_CHACHA20_POLY1305 = Cipher("ECDHE-RSA-CHACHA20-POLY1305", Protocols.TLS12, True, False, iana_standard_name="TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256")
     CHACHA20_POLY1305_SHA256 = Cipher("TLS_CHACHA20_POLY1305_SHA256", Protocols.TLS13, True, False, iana_standard_name="TLS_CHACHA20_POLY1305_SHA256")
 
+    AWS_CRT_SDK_TLS_1_0 = Cipher("AWS-CRT-SDK-TLSv1.0", Protocols.TLS10, False, False, s2n=True)
     KMS_TLS_1_0_2018_10 = Cipher("KMS-TLS-1-0-2018-10", Protocols.TLS10, False, False, s2n=True)
     KMS_PQ_TLS_1_0_2019_06 = Cipher("KMS-PQ-TLS-1-0-2019-06", Protocols.TLS10, False, False, s2n=True, pq=True)
     KMS_PQ_TLS_1_0_2020_02 = Cipher("KMS-PQ-TLS-1-0-2020-02", Protocols.TLS10, False, False, s2n=True, pq=True)
