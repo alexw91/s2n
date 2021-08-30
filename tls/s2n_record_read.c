@@ -147,6 +147,9 @@ int s2n_record_parse(struct s2n_connection *conn)
     /* The NULL stream cipher MUST NEVER be used for ApplicationData.
      * If ApplicationData is unencrypted, we can't trust it. */
     if (cipher_suite->record_alg->cipher == &s2n_null_cipher) {
+        if (content_type == TLS_APPLICATION_DATA) {
+            printf("content_type: %d\n", content_type);
+        }
         POSIX_ENSURE(content_type != TLS_APPLICATION_DATA, S2N_ERR_DECRYPT);
     }
 

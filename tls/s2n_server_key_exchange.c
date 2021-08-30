@@ -58,6 +58,7 @@ int s2n_server_key_recv(struct s2n_connection *conn)
         POSIX_GUARD(s2n_get_and_validate_negotiated_signature_scheme(conn, in, active_sig_scheme));
     }
 
+    printf("Chosen SigScheme IANA Value: %04X\n", active_sig_scheme->iana_value);
     POSIX_GUARD(s2n_hash_init(signature_hash, active_sig_scheme->hash_alg));
     POSIX_GUARD(s2n_hash_update(signature_hash, conn->secrets.client_random, S2N_TLS_RANDOM_DATA_LEN));
     POSIX_GUARD(s2n_hash_update(signature_hash, conn->secrets.server_random, S2N_TLS_RANDOM_DATA_LEN));

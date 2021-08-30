@@ -160,6 +160,10 @@ int s2n_get_and_validate_negotiated_signature_scheme(struct s2n_connection *conn
         return S2N_SUCCESS;
     }
 
+    printf("RSA PSS Signing Supported?: %d\n", s2n_is_rsa_pss_signing_supported());
+    printf("Default SigScheme IANA Value: 0x%04X\n", default_scheme.iana_value);
+    printf("Server Chosen  SigScheme IANA Value: 0x%04X\n", actual_iana_val);
+
     POSIX_BAIL(S2N_ERR_INVALID_SIGNATURE_SCHEME);
 }
 
@@ -225,12 +229,15 @@ int s2n_send_supported_sig_scheme_list(struct s2n_connection *conn, struct s2n_s
 
     POSIX_GUARD(s2n_stuffer_write_uint16(out, s2n_supported_sig_scheme_list_size(conn)));
 
+    printf("Client sending supported SigScheme List to server...\nSending: ");
     for (size_t i = 0; i < signature_preferences->count; i++) {
         const struct s2n_signature_scheme *const scheme = signature_preferences->signature_schemes[i];
         if (0 == s2n_signature_scheme_valid_to_offer(conn, scheme)) {
+            printf("0x%04X, ", scheme->iana_value);
             POSIX_GUARD(s2n_stuffer_write_uint16(out, scheme->iana_value));
         }
     }
+    printf("\n");
 
     return 0;
 }
