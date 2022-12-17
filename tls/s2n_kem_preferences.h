@@ -27,6 +27,7 @@ struct s2n_kem_preferences {
     /* tls13_kem_groups used for hybrid TLS 1.3 */
     uint8_t tls13_kem_group_count;
     const struct s2n_kem_group **tls13_kem_groups;
+    int draft_revision; /* https://datatracker.ietf.org/doc/html/draft-ietf-tls-hybrid-design */
 };
 
 extern const struct s2n_kem *pq_kems_r3_2021_05[1];

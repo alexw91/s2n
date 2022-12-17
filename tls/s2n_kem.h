@@ -105,7 +105,7 @@ extern int s2n_get_kem_from_extension_id(kem_extension_size kem_id, const struct
 extern int s2n_kem_send_public_key(struct s2n_stuffer *out, struct s2n_kem_params *kem_params);
 extern int s2n_kem_recv_public_key(struct s2n_stuffer *in, struct s2n_kem_params *kem_params);
 extern int s2n_kem_send_ciphertext(struct s2n_stuffer *out, struct s2n_kem_params *kem_params);
-extern int s2n_kem_recv_ciphertext(struct s2n_stuffer *in, struct s2n_kem_params *kem_params);
+extern int s2n_kem_recv_ciphertext(struct s2n_stuffer *in, struct s2n_kem_params *kem_params, uint8_t len_prefixed);
 
 /* The following are API signatures for PQ KEMs as defined by NIST. All functions return 0
  * on success, and !0 on failure. Avoid calling these functions directly within s2n. Instead,

@@ -32,6 +32,15 @@ const struct s2n_kem_preferences kem_preferences_pq_tls_1_0_2021_05 = {
     .kems = pq_kems_r3_2021_05,
     .tls13_kem_group_count = s2n_array_len(pq_kem_groups_r3),
     .tls13_kem_groups = pq_kem_groups_r3,
+    .draft_revision = 0
+};
+
+const struct s2n_kem_preferences kem_preferences_pq_tls_1_0_2023_01 = {
+    .kem_count = s2n_array_len(pq_kems_r3_2021_05),
+    .kems = pq_kems_r3_2021_05,
+    .tls13_kem_group_count = s2n_array_len(pq_kem_groups_r3),
+    .tls13_kem_groups = pq_kem_groups_r3,
+    .draft_revision = 5
 };
 
 const struct s2n_kem_preferences kem_preferences_null = {
@@ -39,6 +48,7 @@ const struct s2n_kem_preferences kem_preferences_null = {
     .kems = NULL,
     .tls13_kem_group_count = 0,
     .tls13_kem_groups = NULL,
+    .draft_revision = 0
 };
 
 /* Determines if query_iana_id corresponds to a tls13_kem_group for these KEM preferences. */

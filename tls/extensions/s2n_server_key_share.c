@@ -204,17 +204,41 @@ static int s2n_server_key_share_recv_pq_hybrid(struct s2n_connection *conn, uint
     POSIX_ENSURE(received_total_share_size == server_kem_group_params->kem_group->server_share_size, S2N_ERR_BAD_KEY_SHARE);
     POSIX_ENSURE(s2n_stuffer_data_available(extension) == received_total_share_size, S2N_ERR_BAD_KEY_SHARE);
 
+    uint16_t expected_ecc_size = server_kem_group_params->ecc_params.negotiated_curve->share_size;
+    uint16_t expected_kem_size = server_kem_group_params->kem_params.kem->ciphertext_length;
+    uint16_t expected_total_share_size = expected_ecc_size + expected_kem_size;
+
+    /* Initial draft versions of Hybrid PQ TLS spec required that each key share be prefixed by it's length. Later
+     * revisions dropped those extra lengths and shortened the total key share by 4 bytes. For backwards compatibility,
+     * check if the total key share is 4 bytes longer than expected, and if it is then parse those extra 4 bytes as
+     * lengths according to the previous draft standard. */
+    uint8_t length_prefixed = 0;
+    if (expected_total_share_size < received_total_share_size
+            && (received_total_share_size - expected_total_share_size) == (2 * sizeof(uint16_t))) {
+        length_prefixed = 1;
+    }
+
+    POSIX_ENSURE((received_total_share_size == expected_total_share_size) || length_prefixed, S2N_ERR_BAD_KEY_SHARE);
+
     /* Parse ECC key share */
-    uint16_t ecc_share_size;
+    if (length_prefixed) {
+        uint16_t ecc_share_size;
+        POSIX_GUARD(s2n_stuffer_read_uint16(extension, &ecc_share_size));
+        POSIX_ENSURE(ecc_share_size == expected_ecc_size, S2N_ERR_BAD_KEY_SHARE);
+    }
     struct s2n_blob point_blob;
-    POSIX_GUARD(s2n_stuffer_read_uint16(extension, &ecc_share_size));
-    POSIX_ENSURE(s2n_ecc_evp_read_params_point(extension, ecc_share_size, &point_blob) == S2N_SUCCESS, S2N_ERR_BAD_KEY_SHARE);
+    POSIX_ENSURE(s2n_ecc_evp_read_params_point(extension, expected_ecc_size, &point_blob) == S2N_SUCCESS, S2N_ERR_BAD_KEY_SHARE);
     POSIX_ENSURE(s2n_ecc_evp_parse_params_point(&point_blob, &server_kem_group_params->ecc_params) == S2N_SUCCESS, S2N_ERR_BAD_KEY_SHARE);
     POSIX_ENSURE(server_kem_group_params->ecc_params.evp_pkey != NULL, S2N_ERR_BAD_KEY_SHARE);
 
     /* Parse the PQ KEM key share */
-    POSIX_ENSURE(s2n_kem_recv_ciphertext(extension, &conn->kex_params.client_kem_group_params.kem_params) == S2N_SUCCESS,
+    POSIX_ENSURE(s2n_kem_recv_ciphertext(extension, &conn->kex_params.client_kem_group_params.kem_params, length_prefixed) == S2N_SUCCESS,
             S2N_ERR_BAD_KEY_SHARE);
+
+//    fprintf(stderr, "Received Size: %d\n", received_total_share_size);
+//    fprintf(stderr, "Expected Size: %d\n", expected_total_share_size);
+//    fprintf(stderr, "ECC Size: %d\n", expected_ecc_size);
+//    fprintf(stderr, "KEM Size: %d\n\n", expected_kem_size);
 
     return S2N_SUCCESS;
 }

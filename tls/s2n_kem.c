@@ -334,19 +334,21 @@ int s2n_kem_send_ciphertext(struct s2n_stuffer *out, struct s2n_kem_params *kem_
     return S2N_SUCCESS;
 }
 
-int s2n_kem_recv_ciphertext(struct s2n_stuffer *in, struct s2n_kem_params *kem_params) {
+int s2n_kem_recv_ciphertext(struct s2n_stuffer *in, struct s2n_kem_params *kem_params, int len_prefixed) {
     POSIX_ENSURE_REF(in);
     POSIX_ENSURE_REF(kem_params);
     POSIX_ENSURE_REF(kem_params->kem);
     POSIX_ENSURE_REF(kem_params->private_key.data);
 
     const struct s2n_kem *kem = kem_params->kem;
-    kem_ciphertext_key_size ciphertext_length;
 
-    POSIX_GUARD(s2n_stuffer_read_uint16(in, &ciphertext_length));
-    S2N_ERROR_IF(ciphertext_length != kem->ciphertext_length, S2N_ERR_BAD_MESSAGE);
+    if (len_prefixed) {
+        kem_ciphertext_key_size ciphertext_length;
+        POSIX_GUARD(s2n_stuffer_read_uint16(in, &ciphertext_length));
+        S2N_ERROR_IF(ciphertext_length != kem->ciphertext_length, S2N_ERR_BAD_MESSAGE);
+    }
 
-    const struct s2n_blob ciphertext = {.data = s2n_stuffer_raw_read(in, ciphertext_length), .size = ciphertext_length};
+    const struct s2n_blob ciphertext = {.data = s2n_stuffer_raw_read(in, kem->ciphertext_length), .size = kem->ciphertext_length};
     POSIX_ENSURE_REF(ciphertext.data);
 
     /* Saves the shared secret in kem_params */
