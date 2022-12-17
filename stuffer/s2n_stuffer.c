@@ -266,6 +266,19 @@ int s2n_stuffer_erase_and_read(struct s2n_stuffer *stuffer, struct s2n_blob *out
     return S2N_SUCCESS;
 }
 
+int s2n_stuffer_peek_bytes(struct s2n_stuffer *stuffer, uint8_t *data, uint32_t size)
+{
+    POSIX_ENSURE_REF(data);
+    POSIX_PRECONDITION(s2n_stuffer_validate(stuffer));
+    POSIX_ENSURE(s2n_stuffer_data_available(stuffer) >= size, S2N_ERR_STUFFER_OUT_OF_DATA);
+    POSIX_ENSURE_REF(stuffer->blob.data);
+    void *ptr = stuffer->blob.data + stuffer->read_cursor;
+
+    POSIX_CHECKED_MEMCPY(data, ptr, size);
+
+    return S2N_SUCCESS;
+}
+
 int s2n_stuffer_read_bytes(struct s2n_stuffer *stuffer, uint8_t *data, uint32_t size)
 {
     POSIX_ENSURE_REF(data);

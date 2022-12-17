@@ -88,6 +88,7 @@ extern bool s2n_stuffer_is_consumed(struct s2n_stuffer *stuffer);
 extern int s2n_stuffer_read(struct s2n_stuffer *stuffer, struct s2n_blob *out);
 extern int s2n_stuffer_erase_and_read(struct s2n_stuffer *stuffer, struct s2n_blob *out);
 extern int s2n_stuffer_write(struct s2n_stuffer *stuffer, const struct s2n_blob *in);
+extern int s2n_stuffer_peek_bytes(struct s2n_stuffer *stuffer, uint8_t *out, uint32_t n);
 extern int s2n_stuffer_read_bytes(struct s2n_stuffer *stuffer, uint8_t *out, uint32_t n);
 extern int s2n_stuffer_erase_and_read_bytes(struct s2n_stuffer *stuffer, uint8_t *data, uint32_t size);
 extern int s2n_stuffer_write_bytes(struct s2n_stuffer *stuffer, const uint8_t *in, const uint32_t n);
@@ -112,6 +113,7 @@ extern int s2n_stuffer_send_to_fd(struct s2n_stuffer *stuffer, const int wfd, co
 
 /* Read and write integers in network order */
 extern int s2n_stuffer_read_uint8(struct s2n_stuffer *stuffer, uint8_t *u);
+extern int s2n_stuffer_peek_uint16(struct s2n_stuffer *stuffer, uint16_t *u);
 extern int s2n_stuffer_read_uint16(struct s2n_stuffer *stuffer, uint16_t *u);
 extern int s2n_stuffer_read_uint24(struct s2n_stuffer *stuffer, uint32_t *u);
 extern int s2n_stuffer_read_uint32(struct s2n_stuffer *stuffer, uint32_t *u);

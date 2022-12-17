@@ -68,6 +68,19 @@ int s2n_stuffer_reserve_uint8(struct s2n_stuffer *stuffer, struct s2n_stuffer_re
     return s2n_stuffer_reserve(stuffer, reservation, sizeof(uint8_t));
 }
 
+int s2n_stuffer_peek_uint16(struct s2n_stuffer *stuffer, uint16_t *u)
+{
+    POSIX_ENSURE_REF(u);
+    uint8_t data[sizeof(uint16_t)];
+
+    POSIX_GUARD(s2n_stuffer_peek_bytes(stuffer, data, sizeof(data)));
+
+    *u = data[0] << 8;
+    *u |= data[1];
+
+    return S2N_SUCCESS;
+}
+
 int s2n_stuffer_read_uint16(struct s2n_stuffer *stuffer, uint16_t *u)
 {
     POSIX_ENSURE_REF(u);
