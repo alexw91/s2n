@@ -114,9 +114,9 @@ static int s2n_generate_pq_hybrid_key_share(struct s2n_stuffer *out, struct s2n_
     /* The structure of the PQ share is:
      *    IANA ID (2 bytes)
      * || total share size (2 bytes)
-     * || size of ECC key share (2 bytes)
+     * || [OPTIONAL] size of ECC key share (2 bytes)
      * || ECC key share (variable bytes)
-     * || size of PQ key share (2 bytes)
+     * || [OPTIONAL] size of PQ key share (2 bytes)
      * || PQ key share (variable bytes) */
     POSIX_GUARD(s2n_stuffer_write_uint16(out, kem_group->iana_id));
 
@@ -125,10 +125,11 @@ static int s2n_generate_pq_hybrid_key_share(struct s2n_stuffer *out, struct s2n_
 
     struct s2n_ecc_evp_params *ecc_params = &kem_group_params->ecc_params;
     ecc_params->negotiated_curve = kem_group->curve;
-    POSIX_GUARD_RESULT(s2n_ecdhe_send_public_key(ecc_params, out));
 
     struct s2n_kem_params *kem_params = &kem_group_params->kem_params;
     kem_params->kem = kem_group->kem;
+
+    POSIX_GUARD_RESULT(s2n_ecdhe_send_public_key(ecc_params, out, kem_params->len_prefixed));
     POSIX_GUARD(s2n_kem_send_public_key(out, kem_params));
 
     POSIX_GUARD(s2n_stuffer_write_vector_size(&total_share_size));
@@ -181,6 +182,7 @@ static int s2n_generate_default_pq_hybrid_key_share(struct s2n_connection *conn,
         client_params->kem_group = server_group;
     } else {
         client_params->kem_group = kem_pref->tls13_kem_groups[0];
+        client_params->kem_params.len_prefixed = s2n_tls13_client_must_use_hybrid_kem_length_prefix(kem_pref);
     }
     POSIX_GUARD(s2n_generate_pq_hybrid_key_share(out, client_params));
 
@@ -342,20 +344,28 @@ static int s2n_client_key_share_recv_pq_hybrid(struct s2n_connection *conn, stru
         return S2N_SUCCESS;
     }
 
-    /* Ignore KEM groups with unexpected overall total share sizes */
-    if (key_share->blob.size != kem_group->client_share_size) {
-        return S2N_SUCCESS;
-    }
+    bool is_hybrid_share_length_prefixed = 0;
+    uint16_t actual_hybrid_share_size = key_share->blob.size;
 
-    /* Ignore KEM groups with unexpected ECC share sizes */
-    uint16_t ec_share_size = 0;
-    POSIX_GUARD(s2n_stuffer_read_uint16(key_share, &ec_share_size));
-    if (ec_share_size != kem_group->curve->share_size) {
-        return S2N_SUCCESS;
+    /* The length of the hybrid key share must be one of two possible lengths. It's internal values are either length
+     * prefixed, or they are not. If actual_hybrid_share_size is not one of these two lengths, then
+     * s2n_is_tls13_hybrid_kem_length_prefixed() will return an error. */
+    POSIX_GUARD_RESULT(s2n_is_tls13_hybrid_kem_length_prefixed(actual_hybrid_share_size, kem_group, &is_hybrid_share_length_prefixed));
+
+    if (is_hybrid_share_length_prefixed) {
+        /* Ignore KEM groups with unexpected ECC share sizes */
+        uint16_t ec_share_size = 0;
+        POSIX_GUARD(s2n_stuffer_read_uint16(key_share, &ec_share_size));
+        if (ec_share_size != kem_group->curve->share_size) {
+            return S2N_SUCCESS;
+        }
     }
 
     DEFER_CLEANUP(struct s2n_kem_group_params new_client_params = { 0 }, s2n_kem_group_free);
     new_client_params.kem_group = kem_group;
+
+    /* Need to save whether the client included the length prefix so that we can match their behavior in our response. */
+    new_client_params.kem_params.len_prefixed = is_hybrid_share_length_prefixed;
 
     POSIX_GUARD(s2n_client_key_share_parse_ecc(key_share, kem_group->curve, &new_client_params.ecc_params));
     /* If we were unable to parse the EC portion of the share, negotiated_curve
