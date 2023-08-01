@@ -929,6 +929,22 @@ const char *s2n_connection_get_kem_group_name(struct s2n_connection *conn)
     return conn->kex_params.client_kem_group_params.kem_group->name;
 }
 
+const char *s2n_connection_get_group_name(struct s2n_connection *conn)
+{
+    PTR_ENSURE_REF(conn);
+
+    const char* hybrid_group_name = s2n_connection_get_kem_group_name(conn);
+    const char* ecdhe_curve_name = s2n_connection_get_curve(conn);
+    bool is_hybrid_group = !!strcmp(hybrid_group_name, "NONE");
+
+    /* If hybrid_group_name is not "NONE", return the hybrid group name. Otherwise return the ECDH curve. */
+    if (is_hybrid_group) {
+        return hybrid_group_name;
+    } else {
+        return ecdhe_curve_name;
+    }
+}
+
 int s2n_connection_get_client_protocol_version(struct s2n_connection *conn)
 {
     POSIX_ENSURE_REF(conn);

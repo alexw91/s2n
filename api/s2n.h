@@ -2890,6 +2890,14 @@ S2N_API extern const char *s2n_connection_get_kem_name(struct s2n_connection *co
 S2N_API extern const char *s2n_connection_get_kem_group_name(struct s2n_connection *conn);
 
 /**
+ * Function to get the human readable SupportedGroup negotiated used by the connection (Hybrid or Classical).
+ *
+ * @param conn A pointer to the s2n connection
+ * @returns A human readable string for the SupportedGroup. If no SupportedGroup was negotiated this function returns returns "NONE"
+ */
+S2N_API extern const char *s2n_connection_get_group_name(struct s2n_connection *conn);
+
+/**
  * Function to get the alert that caused a connection to close. s2n-tls considers all
  * TLS alerts fatal and shuts down a connection whenever one is received.
  *
