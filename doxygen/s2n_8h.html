@@ -23,7 +23,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="s2n-logo-github.svg"/></td>
   <td id="projectalign">
-   <div id="projectname">AWS s2n-tls<span id="projectnumber">&#160;v0.9.0-804b8897</span>
+   <div id="projectname">AWS s2n-tls<span id="projectnumber">&#160;v0.9.0-7a7fae2d</span>
    </div>
    <div id="projectbrief">s2n-tls is a C99 implementation of the TLS/SSL protocols that is designed to be simple, small, fast, and with security as a priority.</div>
   </td>
@@ -457,6 +457,8 @@ Functions</h2></td></tr>
 <tr class="separator:a59be9ad4336811d9910f07bb74edb364"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae6d6a59a875a39fdd9f81ae02595173d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s2n_8h.html#ae6d6a59a875a39fdd9f81ae02595173d">s2n_config_add_ticket_crypto_key</a> (struct s2n_config *config, const uint8_t *name, uint32_t name_len, uint8_t *key, uint32_t key_len, uint64_t intro_time_in_seconds_from_epoch)</td></tr>
 <tr class="separator:ae6d6a59a875a39fdd9f81ae02595173d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83b61c7518ebbb88cf0c481dd3412b48"><td class="memItemLeft" align="right" valign="top"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s2n_8h.html#a83b61c7518ebbb88cf0c481dd3412b48">s2n_config_require_ticket_forward_secrecy</a> (struct s2n_config *config, bool enabled)</td></tr>
+<tr class="separator:a83b61c7518ebbb88cf0c481dd3412b48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a99493d7c1f33f5f5390dd0fdd95ab431"><td class="memItemLeft" align="right" valign="top"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s2n_8h.html#a99493d7c1f33f5f5390dd0fdd95ab431">s2n_config_set_ctx</a> (struct s2n_config *config, void *ctx)</td></tr>
 <tr class="separator:a99493d7c1f33f5f5390dd0fdd95ab431"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab325136d7c254e6f72d2a134ad59f759"><td class="memItemLeft" align="right" valign="top"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s2n_8h.html#ab325136d7c254e6f72d2a134ad59f759">s2n_config_get_ctx</a> (struct s2n_config *config, void **ctx)</td></tr>
@@ -555,6 +557,8 @@ Functions</h2></td></tr>
 <tr class="separator:a684b2e5c86c85f089392bd1a49d38e17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8a2a372d2d13cef62357473b7fea568"><td class="memItemLeft" align="right" valign="top"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s2n_8h.html#ab8a2a372d2d13cef62357473b7fea568">s2n_connection_get_delay</a> (struct s2n_connection *conn)</td></tr>
 <tr class="separator:ab8a2a372d2d13cef62357473b7fea568"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6202daaf67fa8e47cb8d79071ff5066"><td class="memItemLeft" align="right" valign="top"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s2n_8h.html#aa6202daaf67fa8e47cb8d79071ff5066">s2n_config_set_max_blinding_delay</a> (struct s2n_config *config, uint32_t seconds)</td></tr>
+<tr class="separator:aa6202daaf67fa8e47cb8d79071ff5066"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab4544d664e827a426b484b3eaa62063d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s2n_8h.html#ab4544d664e827a426b484b3eaa62063d">s2n_connection_set_cipher_preferences</a> (struct s2n_connection *conn, const char *version)</td></tr>
 <tr class="separator:ab4544d664e827a426b484b3eaa62063d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a824fed871df4202b6bd5428ee791f660"><td class="memItemLeft" align="right" valign="top"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s2n_8h.html#a824fed871df4202b6bd5428ee791f660">s2n_connection_request_key_update</a> (struct s2n_connection *conn, <a class="el" href="s2n_8h.html#aa8ab6cd4a526f781116a39bd16bab9ba">s2n_peer_key_update</a> peer_request)</td></tr>
@@ -803,6 +807,9 @@ Functions</h2></td></tr>
 <tr class="separator:a5d020f94e2f7324b8a5eee91287c18b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a79859a910905832157c08251d1a76888"><td class="memItemLeft" align="right" valign="top"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s2n_8h.html#a79859a910905832157c08251d1a76888">s2n_connection_deserialize</a> (struct s2n_connection *conn, uint8_t *buffer, uint32_t buffer_length)</td></tr>
 <tr class="separator:a79859a910905832157c08251d1a76888"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a870cb61cc69457a41f2bcee5f365a5"><td class="memItemLeft" align="right" valign="top"><a id="a0a870cb61cc69457a41f2bcee5f365a5" name="a0a870cb61cc69457a41f2bcee5f365a5"></a>
+<a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int&#160;</td><td class="memItemRight" valign="bottom"><b>s2n_config_set_cert_authorities_from_trust_store</b> (struct s2n_config *config)</td></tr>
+<tr class="separator:a0a870cb61cc69457a41f2bcee5f365a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -1551,7 +1558,17 @@ Safety</h1>
       </table>
 </div><div class="memdoc">
 <p >Used to declare what type of client certificate authentication to use.</p>
-<p >Currently the default for s2n-tls is for neither the server side or the client side to use Client (aka Mutual) authentication. </p>
+<p >A s2n_connection will enforce client certificate authentication (mTLS) differently based on the <code>s2n_cert_auth_type</code> and <code>s2n_mode</code> (client/server) of the connection, as described below.</p>
+<p >Server behavior:</p><ul>
+<li>None (default): Will not request client authentication.</li>
+<li>Optional: Request the client's certificate and validate it. If no certificate is received then no validation is performed.</li>
+<li>Required: Request the client's certificate and validate it. Abort the handshake if a client certificate is not received.</li>
+</ul>
+<p >Client behavior:</p><ul>
+<li>None: Abort the handshake if the server requests client authentication.</li>
+<li>Optional (default): Sends the client certificate if the server requests client authentication. No certificate is sent if the application hasn't provided a certificate.</li>
+<li>Required: Send the client certificate. Abort the handshake if the server doesn't request client authentication or if the application hasn't provided a certificate. </li>
+</ul>
 
 </div>
 </div>
@@ -4299,6 +4316,45 @@ s2n-tls has never supported compression methods in any TLS version and therefore
 
 </div>
 </div>
+<a id="a83b61c7518ebbb88cf0c481dd3412b48" name="a83b61c7518ebbb88cf0c481dd3412b48"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83b61c7518ebbb88cf0c481dd3412b48">&#9670;&#160;</a></span>s2n_config_require_ticket_forward_secrecy()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int s2n_config_require_ticket_forward_secrecy </td>
+          <td>(</td>
+          <td class="paramtype">struct s2n_config *&#160;</td>
+          <td class="paramname"><em>config</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>enabled</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Requires that session tickets are only used when forward secrecy is possible.</p>
+<p >Restricts session resumption to TLS1.3, as the tickets used in TLS1.2 resumption are not forward secret. Clients should not expect to receive new session tickets and servers will not send new session tickets when TLS1.2 is negotiated and ticket forward secrecy is required.</p>
+<dl class="section note"><dt>Note</dt><dd>The default behavior is that forward secrecy is not required.</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">config</td><td>The config object being updated </td></tr>
+    <tr><td class="paramname">enabled</td><td>Indicates if forward secrecy is required or not on tickets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>S2N_SUCCESS on success. S2N_FAILURE on failure </dd></dl>
+
+</div>
+</div>
 <a id="a0f2ab042e1f9dea7ff02b3746dc16188" name="a0f2ab042e1f9dea7ff02b3746dc16188"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0f2ab042e1f9dea7ff02b3746dc16188">&#9670;&#160;</a></span>s2n_config_send_max_fragment_length()</h2>
 
@@ -5100,6 +5156,48 @@ Safety</h1>
 
 </div>
 </div>
+<a id="aa6202daaf67fa8e47cb8d79071ff5066" name="aa6202daaf67fa8e47cb8d79071ff5066"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6202daaf67fa8e47cb8d79071ff5066">&#9670;&#160;</a></span>s2n_config_set_max_blinding_delay()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="s2n_8h.html#af1c2b8586154a9094d6978137ef001ac">S2N_API</a> int s2n_config_set_max_blinding_delay </td>
+          <td>(</td>
+          <td class="paramtype">struct s2n_config *&#160;</td>
+          <td class="paramname"><em>config</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>seconds</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Configures the maximum blinding delay enforced after errors.</p>
+<p >Blinding protects your application from timing side channel attacks like Lucky13. While s2n-tls implements other, more specific mitigations for known timing side channels, blinding is important as a defense against currently unknown or unreported timing attacks.</p>
+<p >Setting a maximum delay lower than the recommended default (30s) will make timing attacks against your application easier. The lower you set the delay, the fewer requests and less total time an attacker will require to execute an attack. If you must lower the delay for reasons such as client timeouts, then you should choose the highest value practically possible to limit your risk.</p>
+<p >If you lower the blinding delay, you should also consider implementing monitoring and filtering to detect and reject suspicious traffic that could be gathering timing information from a potential side channel. Timing attacks usually involve repeatedly triggering TLS errors.</p>
+<dl class="section warning"><dt>Warning</dt><dd>Do NOT set a lower blinding delay unless you understand the risks and have other mitigations for timing side channels in place.</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This delay needs to be set lower than any timeouts, such as your TCP socket timeout.</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">config</td><td>The config object being updated. </td></tr>
+    <tr><td class="paramname">seconds</td><td>The maximum number of seconds that s2n-tls will delay for in the event of a sensitive error. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>S2N_SUCCESS on success. S2N_FAILURE on failure. </dd></dl>
+
+</div>
+</div>
 <a id="adbe1f248fa4510df373890a70f6f39b9" name="adbe1f248fa4510df373890a70f6f39b9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#adbe1f248fa4510df373890a70f6f39b9">&#9670;&#160;</a></span>s2n_config_set_max_cert_chain_depth()</h2>
 
@@ -5648,6 +5746,7 @@ Safety</h1>
       </table>
 </div><div class="memdoc">
 <p >Sets up a connection to request the certificate status of a peer during an SSL handshake. If set to S2N_STATUS_REQUEST_NONE, no status request is made.</p>
+<dl class="section note"><dt>Note</dt><dd>SHA-1 is the only supported hash algorithm for the <code>certID</code> field. This is different from the hash algorithm used for the OCSP signature. See <a href="https://datatracker.ietf.org/doc/html/rfc6960#section-4.1.1">RFC 6960</a> for more information. While unlikely to be the case, if support for a different hash algorithm is required, the s2n-tls validation can be disabled with <code><a class="el" href="s2n_8h.html#affff244d7ed6f3b8d1f885df1b307f4e">s2n_config_set_check_stapled_ocsp_response()</a></code> and the response can be retrieved for manual validation with <code><a class="el" href="s2n_8h.html#a8ad8092d7c616efd40bb0145c4895f1f">s2n_connection_get_ocsp_response()</a></code>.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">config</td><td>The configuration object being updated </td></tr>
