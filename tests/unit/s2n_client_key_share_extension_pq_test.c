@@ -864,9 +864,17 @@ int main()
                     EXPECT_SUCCESS(s2n_client_key_share_extension.recv(server_conn, &key_share_extension));
                     EXPECT_EQUAL(s2n_stuffer_data_available(&key_share_extension), 0);
 
-                    /* Should have chosen curve 1, because curve 0 was malformed */
+                    /* Should have chosen group 1, because gropu 0 was malformed */
+                    const struct s2n_kem_group *expected_server_selection = kem_group1;
+
+                    /* s2n_client_key_share_extension.recv will not reject corrupted unprefixed X25519MLKEM768 KeyShares.
+                     * Errors will not be seen until the share is attempted to be used later in the handshake */
+                    if (kem_group0 == &s2n_x25519_mlkem_768 && len_prefixed == 0) {
+                        expected_server_selection = kem_group0;
+                    }
+
                     struct s2n_kem_group_params *server_params = &server_conn->kex_params.client_kem_group_params;
-                    EXPECT_EQUAL(server_params->kem_group, kem_group1);
+                    EXPECT_EQUAL(server_params->kem_group, expected_server_selection);
                     EXPECT_NOT_NULL(server_params->kem_params.public_key.data);
                     EXPECT_NOT_NULL(server_params->ecc_params.evp_pkey);
 
