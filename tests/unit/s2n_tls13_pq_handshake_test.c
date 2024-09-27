@@ -422,8 +422,8 @@ int main()
 
     /* ML-KEM is only available on newer versions of AWS-LC. If it's
      * unavailable, we must downgrade the assertions to Kyber or EC. */
-    const struct s2n_kem_group *kyber_if_no_mlkem = &s2n_secp256r1_mlkem_768;
-    const struct s2n_kem_group *null_if_no_mlkem = &s2n_secp256r1_mlkem_768;
+    const struct s2n_kem_group *kyber_if_no_mlkem = &s2n_x25519_mlkem_768;
+    const struct s2n_kem_group *null_if_no_mlkem = &s2n_x25519_mlkem_768;
     const struct s2n_ecc_named_curve *ec_if_no_mlkem = NULL;
     if (!s2n_libcrypto_supports_mlkem()) {
         kyber_if_no_mlkem = &s2n_secp256r1_kyber_768_r3;
@@ -726,6 +726,8 @@ int main()
     };
 
     for (size_t i = 0; i < s2n_array_len(test_vectors); i++) {
+
+        fprintf(stdout, "\n\nTest[%zu/%ld]... \n", i, s2n_array_len(test_vectors));
         const struct pq_handshake_test_vector *vector = &test_vectors[i];
         const struct s2n_security_policy *client_policy = vector->client_policy;
         const struct s2n_security_policy *server_policy = vector->server_policy;

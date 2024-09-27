@@ -130,7 +130,14 @@ static int s2n_generate_pq_hybrid_key_share(struct s2n_stuffer *out, struct s2n_
         POSIX_GUARD(s2n_kem_send_public_key(out, kem_params));
     }
 
+//    uint16_t unprefixed_hybrid_share_size = kem_group->curve->share_size + kem_group->kem->public_key_length;
+//    uint16_t prefixed_hybrid_share_size = (2 * S2N_SIZE_OF_KEY_SHARE_SIZE) + unprefixed_hybrid_share_size;
+//    uint32_t expected_share_size = kem_group_params->kem_params.len_prefixed ? prefixed_hybrid_share_size : unprefixed_hybrid_share_size;
 
+//    uint32_t actual_hybrid_share_size = (out->write_cursor - (total_share_size.write_cursor + total_share_size.length));
+//    fprintf(stdout, "KemGroup: %s, GenerateSize: %d \n", kem_group_params->kem_group->name, actual_hybrid_share_size);
+
+//    POSIX_ENSURE_EQ(actual_hybrid_share_size, expected_share_size);
     POSIX_GUARD(s2n_stuffer_write_vector_size(&total_share_size));
 
     return S2N_SUCCESS;
