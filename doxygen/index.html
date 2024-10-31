@@ -23,7 +23,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="s2n-logo-github.svg"/></td>
   <td id="projectalign">
-   <div id="projectname">AWS s2n-tls<span id="projectnumber">&#160;v0.9.0-645c3743</span>
+   <div id="projectname">AWS s2n-tls<span id="projectnumber">&#160;v0.9.0-9f4baecc</span>
    </div>
    <div id="projectbrief">s2n-tls is a C99 implementation of the TLS/SSL protocols that is designed to be simple, small, fast, and with security as a priority.</div>
   </td>
@@ -178,7 +178,7 @@ Using s2n-tls</h2>
 <div class="ttc" id="as2n_8h_html_a67962bf835ce5145d215a9ee8f4985d3"><div class="ttname"><a href="s2n_8h.html#a67962bf835ce5145d215a9ee8f4985d3">s2n_connection_set_fd</a></div><div class="ttdeci">S2N_API int s2n_connection_set_fd(struct s2n_connection *conn, int fd)</div></div>
 <div class="ttc" id="as2n_8h_html_a9afeb514731fa9d74edf6b9e1348c067"><div class="ttname"><a href="s2n_8h.html#a9afeb514731fa9d74edf6b9e1348c067">s2n_send</a></div><div class="ttdeci">S2N_API ssize_t s2n_send(struct s2n_connection *conn, const void *buf, ssize_t size, s2n_blocked_status *blocked)</div></div>
 <div class="ttc" id="as2n_8h_html_ad3222e7aacf35a56be842678171be440"><div class="ttname"><a href="s2n_8h.html#ad3222e7aacf35a56be842678171be440">s2n_negotiate</a></div><div class="ttdeci">S2N_API int s2n_negotiate(struct s2n_connection *conn, s2n_blocked_status *blocked)</div></div>
-<div class="ttc" id="as2n_8h_html_af70ca0b089daa98cd79a424d3f6af15d"><div class="ttname"><a href="s2n_8h.html#af70ca0b089daa98cd79a424d3f6af15d">s2n_blocked_status</a></div><div class="ttdeci">s2n_blocked_status</div><div class="ttdef"><b>Definition:</b> s2n.h:2165</div></div>
+<div class="ttc" id="as2n_8h_html_af70ca0b089daa98cd79a424d3f6af15d"><div class="ttname"><a href="s2n_8h.html#af70ca0b089daa98cd79a424d3f6af15d">s2n_blocked_status</a></div><div class="ttdeci">s2n_blocked_status</div><div class="ttdef"><b>Definition:</b> s2n.h:2178</div></div>
 </div><!-- fragment --><p >For details on building the s2n-tls library and how to use s2n-tls in an application you are developing, see the <a href="https://aws.github.io/s2n-tls/usage-guide">Usage Guide</a>.</p>
 <h2><a class="anchor" id="autotoc_md26"></a>
 s2n-tls features</h2>
@@ -210,7 +210,7 @@ s2n-tls safety mechanisms</h2>
 <p ><a class="anchor" id="autotoc_md34"></a> </p><h5>Compartmentalized random number generation</h5>
 <p >The security of TLS and its associated encryption algorithms depends upon secure random number generation. s2n-tls provides every thread with two separate random number generators. One for "public" randomly generated data that may appear in the clear, and one for "private" data that should remain secret. This approach lessens the risk of potential predictability weaknesses in random number generation algorithms from leaking information across contexts.</p>
 <p ><a class="anchor" id="autotoc_md35"></a> </p><h5>Modularized encryption</h5>
-<p >s2n-tls has been structured so that different encryption libraries may be used. Today s2n-tls supports OpenSSL (versions 1.0.2, 1.1.1 and 3.0.x), LibreSSL, BoringSSL, AWS-LC, and the Apple Common Crypto framework to perform the underlying cryptographic operations.</p>
+<p >s2n-tls has been structured so that different encryption libraries may be used. Today s2n-tls supports AWS-LC, OpenSSL (versions 1.0.2, 1.1.1 and 3.0.x), LibreSSL, and BoringSSL to perform the underlying cryptographic operations. Check the <a href="docs/BUILD.md#building-with-a-specific-libcrypto">libcrypto build documentation</a> for a list of libcrypto-specific features.</p>
 <p ><a class="anchor" id="autotoc_md36"></a> </p><h5>Timing blinding</h5>
 <p >s2n-tls includes structured support for blinding time-based side-channels that may leak sensitive data. For example, if s2n-tls fails to parse a TLS record or handshake message, s2n-tls will add a randomized delay of between 10 and 30 seconds, granular to nanoseconds, before responding. This raises the complexity of real-world timing side-channel attacks by a factor of at least tens of trillions.</p>
 <p ><a class="anchor" id="autotoc_md37"></a> </p><h5>Table based state-machines</h5>
