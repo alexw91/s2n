@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Configuring the Connection</title>
+        <title>Early Data</title>
 
 
         <!-- Custom HTML head -->
@@ -174,25 +174,121 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="configuring-the-connection"><a class="header" href="#configuring-the-connection">Configuring the Connection</a></h1>
-<p><code>s2n_config</code> objects are used to change the default settings of a s2n-tls connection. Use <code>s2n_config_new()</code> to create a new config object. To associate a config with a connection call <code>s2n_connection_set_config()</code>. A config should not be altered once it is set on a connection as this will produce undefined behavior. It is not necessary to create a config object per connection; one config object should be used for many connections. Call <code>s2n_config_free()</code> to free the object when no longer needed. <em>Only</em> free the config object when all connections using it have been freed.</p>
-<p>Calling <code>s2n_config_new()</code> can have a performance cost during config creation due to loading
-default system certificates into the trust store (see <a href="./ch09-certificates.html#configuring-the-trust-store">Configuring the Trust Store</a>).
-For increased performance, use <code>s2n_config_new_minimal()</code> when system certificates are not needed
-for certificate validation.</p>
-<p>Most commonly, a <code>s2n_config</code> object is used to set the certificate key pair for authentication and change the default security policy. See the sections for <a href="./ch09-certificates.html">certificates</a> and <a href="./ch06-security-policies.html">security policies</a> for more information on those settings.</p>
-<h2 id="overriding-the-config"><a class="header" href="#overriding-the-config">Overriding the Config</a></h2>
-<p>Some <code>s2n_config</code> settings can be overridden on a specific connection if desired. For example, <code>s2n_config_append_protocol_preference()</code> appends a list of ALPN protocols to a <code>s2n_config</code>. Calling the <code>s2n_connection_append_protocol_preference()</code> API will override the list of ALPN protocols for an individual connection. Not all config APIs have a corresponding connection API so if there is one missing contact us with an explanation on why it is required for your use-case.</p>
+                        <h1 id="early-data-or-0-rtt-data"><a class="header" href="#early-data-or-0-rtt-data">Early Data or 0-RTT Data</a></h1>
+<p>TLS1.3 introduced the ability for clients to send data before completing the handshake when using external pre-shared keys or session resumption.</p>
+<p><strong>WARNING:</strong> Early data does not have the same security properties as regular data sent after a successful handshake.</p>
+<ul>
+<li>It is not forward secret. If the PSK or session resumption secret is compromised, then the early data is also compromised.</li>
+<li>It is susceptible to replay attacks unless proper precautions are taken. Early data can be captured and successfully resent by an attacker. See <a href="https://tools.ietf.org/rfc/rfc8446#appendix-E.5">the TLS1.3 RFC section on replay attacks</a> for more details, and <a href="#adding-anti-replay-protection">Adding anti-replay protection</a> for how to implement counter measures.</li>
+</ul>
+<p><em><strong>Do not enable early data for your application unless you have understood and mitigated the risks.</strong></em></p>
+<h2 id="configuring-session-resumption-for-early-data"><a class="header" href="#configuring-session-resumption-for-early-data">Configuring Session Resumption for Early Data</a></h2>
+<p>To use early data with session tickets, early data must be enabled on a server by setting the maximum early data allowed to a non-zero value with <code>s2n_config_set_server_max_early_data_size()</code> or <code>s2n_connection_set_server_max_early_data_size()</code>. The server then begins issuing tickets that support early data, and clients can use early data when they use those tickets.</p>
+<h2 id="configuring-external-pre-shared-keys-for-early-data"><a class="header" href="#configuring-external-pre-shared-keys-for-early-data">Configuring External Pre-shared Keys for Early Data</a></h2>
+<p>To use early data with pre-shared keys, individual pre-shared keys must support early data. In addition to configuring the maximum early data allowed, each pre-shared key needs an associated cipher suite and if applicable, application protocol. The server only accepts early data if the pre-shared key’s associated cipher suite and application protocol match the cipher suite and the application protocol negotiated during the handshake.</p>
+<p>The maximum early data allowed and cipher suite can be set with <code>s2n_psk_configure_early_data()</code>. If the connection will negotiate an application protocol then the expected application protocol can be set with <code>s2n_psk_set_application_protocol()</code>.</p>
+<h2 id="sending-early-data"><a class="header" href="#sending-early-data">Sending Early Data</a></h2>
+<p>To send early data, your application should call <code>s2n_send_early_data()</code> before it calls <code>s2n_negotiate()</code>.</p>
+<p><code>s2n_connection_get_remaining_early_data_size()</code> can be called to check how much more early data the client is allowed to send. If <code>s2n_send_early_data()</code> exceeds the allowed maximum, s2n-tls returns a usage error.</p>
+<p>Like other IO functions, <code>s2n_send_early_data()</code> can potentially fail repeatedly with a blocking error before it eventually succeeds: see <a href="./ch07-io.html">I/O Functions</a> for more information. An application can stop calling <code>s2n_send_early_data()</code> at any time, even if the function has not returned success yet. If <code>s2n_send_early_data()</code> does return success, the connection is ready to complete the handshake and begin sending normal data. However, <code>s2n_send_early_data()</code> can continue to be called to send more early data if desired.</p>
+<p>Once a client finishes sending early data, you should call <code>s2n_negotiate()</code> to complete the handshake just as you would for a handshake that did not include early data.</p>
+<p>For example:</p>
+<pre><code>uint8_t early_data[] = "early data to send";
+ssize_t total_data_sent = 0, len = sizeof(early_data);
+while (total_data_sent &lt; len) {
+    ssize_t data_sent = 0;
+    int r = s2n_send_early_data(client_conn, early_data + total_data_sent,
+            len - total_data_sent, &amp;data_sent, &amp;blocked);
+    total_data_sent += data_sent;
+    if (r == S2N_SUCCESS) {
+        break;
+    } else if (s2n_error_get_type(s2n_errno) != S2N_ERR_T_BLOCKED) {
+        exit(1);
+    }
+}
+while (s2n_negotiate(client_conn, &amp;blocked) != S2N_SUCCESS) {
+    if (s2n_error_get_type(s2n_errno) != S2N_ERR_T_BLOCKED) {
+        exit(1);
+    }
+}
+</code></pre>
+<h2 id="receiving-early-data"><a class="header" href="#receiving-early-data">Receiving Early Data</a></h2>
+<p>To receive early data, your application should call <code>s2n_recv_early_data()</code> before it calls <code>s2n_negotiate()</code>.</p>
+<p>Like other S2N IO functions, <code>s2n_recv_early_data()</code> can potentially fail repeatedly with a blocking error before it eventually succeeds: see <a href="./ch07-io.html">I/O Functions</a> for more information. Once <code>s2n_recv_early_data()</code> has been called, it must be called until it returns success. If an application stops calling <code>s2n_recv_early_data()</code> early, some early data may be left unread and cause later calls to <code>s2n_negotiate()</code> to return fatal errors. Calling <code>s2n_recv_early_data()</code> again after it returns success is possible but has no effect on the connection.</p>
+<p>Once a server has read all early data, you should call <code>s2n_negotiate()</code> to complete the handshake just as you would for a handshake that did not include early data.</p>
+<p>For example:</p>
+<pre><code>uint8_t early_data[MAX_EARLY_DATA] = { 0 };
+ssize_t total_data_recv = 0, data_recv = 0;
+while (s2n_recv_early_data(conn, early_data + total_data_recv, MAX_EARLY_DATA - total_data_recv,
+        &amp;data_recv, &amp;blocked) != S2N_SUCCESS) {
+    total_data_recv += data_recv;
+    if (s2n_error_get_type(s2n_errno) != S2N_ERR_T_BLOCKED) {
+        exit(1);
+    }
+}
+while (s2n_negotiate(conn, &amp;blocked) != S2N_SUCCESS) {
+    if (s2n_error_get_type(s2n_errno) != S2N_ERR_T_BLOCKED) {
+        exit(1);
+    }
+}
+</code></pre>
+<h2 id="adding-anti-replay-protection"><a class="header" href="#adding-anti-replay-protection">Adding Anti-replay Protection</a></h2>
+<p><strong>s2n-tls does not include anti-replay protection automatically.</strong> Effective anti-replay protection for a multi-server application requires an external state shared by all servers. Without shared state, an attacker can capture early data originally sent to server A and successfully replay it against server B.</p>
+<p>The TLS1.3 specification suggests two possible anti-replay solutions that a user can implement:</p>
+<ol>
+<li><a href="https://tools.ietf.org/rfc/rfc8446#section-8.1">Single-Use Tickets</a>: Valid tickets are stored in a shared database and deleted after use. <code>s2n_connection_get_negotiated_psk_identity_length()</code> and <code>s2n_connection_get_negotiated_psk_identity()</code> can be used to get the ticket identifier, or “pre-shared key identity”, associated with offered early data.</li>
+<li><a href="https://tools.ietf.org/rfc/rfc8446#section-8.2">Client Hello Recording</a>: Instead of recording outstanding valid tickets, unique values from recent ClientHellos can be stored. The client hello message can be retrieved with <code>s2n_connection_get_client_hello()</code> and the pre-shared key identity can be retrieved with <code>s2n_connection_get_negotiated_psk_identity_length()</code> and <code>s2n_connection_get_negotiated_psk_identity()</code>, but s2n-tls does not currently provide methods to retrieve the validated binders or the ClientHello.random.</li>
+</ol>
+<p>The <code>s2n_early_data_cb()</code> can be used to hook an anti-replay solution into s2n-tls. The callback can be configured by using <code>s2n_config_set_early_data_cb()</code>. Using the <strong>s2n_offered_early_data</strong> pointer offered by the callback, <code>s2n_offered_early_data_reject()</code> or <code>s2n_offered_early_data_accept()</code> can accept or reject the client request to use early data.</p>
+<p>An example implementation:</p>
+<pre><code>int s2n_early_data_cb_impl(struct s2n_connection *conn, struct s2n_offered_early_data *early_data)
+{
+    uint16_t identity_size = 0;
+    s2n_connection_get_negotiated_psk_identity_length(conn, &amp;identity_size);
+    uint8_t *identity = malloc(identity_size);
+    s2n_connection_get_negotiated_psk_identity(conn, identity, identity_size);
+
+    if (user_verify_single_use_ticket(identity)) {
+        s2n_offered_early_data_accept(early_data);
+    } else {
+        s2n_offered_early_data_reject(early_data);
+    }
+
+    free(identity);
+    return S2N_SUCCESS;
+}
+</code></pre>
+<p>The callback can also be implemented asynchronously by returning <strong>S2N_SUCCESS</strong> without either accepting or rejecting the early data. The handshake will then fail with an <strong>S2N_ERR_T_BLOCKED</strong> error type and <strong>s2n_blocked_status</strong> set to <strong>S2N_BLOCKED_ON_APPLICATION_INPUT</strong> until <code>s2n_offered_early_data_reject()</code> or <code>s2n_offered_early_data_accept()</code> is called asynchronously.</p>
+<p>An example asynchronous implementation:</p>
+<pre><code>void *user_accept_or_reject_early_data(void *arg)
+{
+    struct s2n_offered_early_data *early_data = (struct s2n_offered_early_data *) arg;
+    if (user_slowly_verify_early_data(early_data)) {
+        s2n_offered_early_data_accept(early_data);
+    } else {
+        s2n_offered_early_data_reject(early_data);
+    }
+    return NULL;
+}
+
+int s2n_early_data_cb_async_impl(struct s2n_connection *conn, struct s2n_offered_early_data *early_data)
+{
+    pthread_t thread_id;
+    pthread_create(&amp;thread_id, NULL, user_accept_or_reject_early_data, (void *) early_data);
+    return S2N_SUCCESS;
+}
+</code></pre>
+<p><code>s2n_offered_early_data_get_context_length()</code> and <code>s2n_offered_early_data_get_context()</code> can be called to examine the optional user context associated with the early data. Unlike most s2n-tls callbacks, the context is not configured when the callback is set. Instead, the context is associated with the specific pre-shared key or session ticket used for early data. The context can be set for external pre-shared keys by calling <code>s2n_psk_set_early_data_context()</code>. For session tickets, <code>s2n_connection_set_server_early_data_context()</code> can be used to set the context the server includes on its new session tickets. Because the server needs to serialize the context when creating a new session ticket, the context is a byte buffer instead of the usual void pointer.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="ch04-connection.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="ch14-connection-serialization.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="ch06-security-policies.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="ch16-post-quantum.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -202,11 +298,11 @@ for certificate validation.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="ch04-connection.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="ch14-connection-serialization.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="ch06-security-policies.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="ch16-post-quantum.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
