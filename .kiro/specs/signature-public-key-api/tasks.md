@@ -1,0 +1,77 @@
+# Implementation Plan
+
+- [x] 1. Add API declaration to public header
+  - [x] 1.1 Add `s2n_conn_get_signature_public_key` function declaration to `api/s2n.h`
+    - Include full doxygen documentation
+    - Follow existing API declaration patterns (see `s2n_connection_get_peer_cert_chain` as reference)
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 7.1, 7.2_
+
+- [ ] 2. Implement core API function
+  - [x] 2.1 Add helper function to format public key string based on key type
+    - Create `s2n_format_public_key_string` internal function in `tls/s2n_connection.c`
+    - Handle RSA/RSA-PSS keys: format as `rsa_<bits>` using `public_key_bits` from `s2n_cert_info`
+    - Handle ECDSA keys: map `public_key_nid` to curve name string (NID_X9_62_prime256v1 → "ecdsa_secp256r1", NID_secp384r1 → "ecdsa_secp384r1", NID_secp521r1 → "ecdsa_secp521r1")
+    - Handle ML-DSA keys: map NID to `mldsa44`, `mldsa65`, `mldsa87`
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 4.1, 4.2, 4.3_
+  - [-] 2.2 Implement `s2n_conn_get_signature_public_key` function
+    - Add parameter validation using POSIX_ENSURE_REF for null checks
+    - Check handshake completion state via `s2n_x509_validator_is_cert_chain_validated`
+    - Retrieve certificate based on mode parameter (S2N_SERVER/S2N_CLIENT)
+    - Extract public key info from leaf certificate's `info` field (`public_key_nid`, `public_key_bits`)
+    - Call helper to format string
+    - Handle buffer size constraints (set required size on failure)
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 5.1, 5.2, 5.3, 6.1, 6.2, 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [ ]* 2.3 Write property test for RSA format consistency
+    - **Property 2: RSA key format consistency**
+    - **Validates: Requirements 2.4, 2.5**
+  - [ ]* 2.4 Write property test for buffer size handling
+    - **Property 3: Buffer too small reports required size**
+    - **Validates: Requirements 5.1, 6.2**
+
+- [ ] 3. Checkpoint - Make sure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 4. Add unit tests for API
+  - [ ] 4.1 Create test file `tests/unit/s2n_conn_get_signature_public_key_test.c`
+    - Set up test infrastructure and includes (follow pattern from `s2n_certificate_test.c`)
+    - Use `BEGIN_TEST()` and `END_TEST()` macros from `s2n_test.h`
+    - _Requirements: 1.1_
+  - [ ] 4.2 Add null parameter tests
+    - Test NULL connection returns S2N_FAILURE with S2N_ERR_NULL
+    - Test NULL output buffer returns S2N_FAILURE with S2N_ERR_NULL
+    - Test NULL output_size returns S2N_FAILURE with S2N_ERR_NULL
+    - _Requirements: 1.2, 1.3, 1.4_
+  - [ ] 4.3 Add RSA certificate tests
+    - Test RSA 2048-bit returns "rsa_2048" (use S2N_DEFAULT_TEST_CERT_CHAIN)
+    - Test RSA 3072-bit returns "rsa_3072"
+    - Test RSA 4096-bit returns "rsa_4096"
+    - _Requirements: 2.1, 2.2, 2.3_
+  - [ ] 4.4 Add ECDSA certificate tests
+    - Test secp256r1 returns "ecdsa_secp256r1" (use S2N_DEFAULT_ECDSA_TEST_CERT_CHAIN)
+    - Test secp384r1 returns "ecdsa_secp384r1"
+    - Test secp521r1 returns "ecdsa_secp521r1"
+    - _Requirements: 3.1, 3.2, 3.3_
+  - [ ]* 4.5 Add ML-DSA certificate tests (if supported)
+    - Test ML-DSA-44 returns "mldsa44"
+    - Test ML-DSA-65 returns "mldsa65"
+    - Test ML-DSA-87 returns "mldsa87"
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [ ] 4.6 Add buffer size tests
+    - Test buffer too small returns failure and sets required size
+    - Test exact buffer size succeeds
+    - Test larger buffer succeeds
+    - _Requirements: 5.1, 5.2, 5.3, 6.1, 6.2_
+  - [ ] 4.7 Add mode parameter tests
+    - Test S2N_SERVER mode returns server certificate info
+    - Test S2N_CLIENT mode returns client certificate info
+    - Test missing client certificate returns failure
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [ ]* 4.8 Write property test for output size correctness
+    - **Property 5: Output size equals string length plus one**
+    - **Validates: Requirements 6.1**
+  - [ ]* 4.9 Write property test for mode parameter correctness
+    - **Property 6: Mode parameter selects correct certificate**
+    - **Validates: Requirements 7.1, 7.2**
+
+- [ ] 5. Final Checkpoint - Make sure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

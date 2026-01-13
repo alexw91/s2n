@@ -28,6 +28,7 @@
 /* Required for s2n_connection_get_key_update_counts */
 #include "api/unstable/ktls.h"
 #include "crypto/s2n_certificate.h"
+#include "crypto/s2n_mldsa.h"
 #include "crypto/s2n_cipher.h"
 #include "crypto/s2n_crypto.h"
 #include "crypto/s2n_fips.h"
@@ -1884,5 +1885,176 @@ int s2n_connection_set_recv_buffering(struct s2n_connection *conn, bool enabled)
     /* QUIC support is not currently compatible with recv_buffering */
     POSIX_ENSURE(!s2n_connection_is_quic_enabled(conn), S2N_ERR_INVALID_STATE);
     conn->recv_buffering = enabled;
+    return S2N_SUCCESS;
+}
+
+
+/* Maximum buffer size for public key string:
+ * - RSA: "rsa_" (4) + max digits for key size (5 for 65536) + null = 10 bytes
+ * - ECDSA: "ecdsa_secp521r1" (15) + null = 16 bytes
+ * - ML-DSA: "mldsa87" (7) + null = 8 bytes
+ * Maximum: 16 bytes
+ */
+#define S2N_PUBLIC_KEY_STRING_MAX_SIZE 16
+
+/* Constant strings for ECDSA curves */
+#define S2N_ECDSA_SECP256R1_STR "ecdsa_secp256r1"
+#define S2N_ECDSA_SECP384R1_STR "ecdsa_secp384r1"
+#define S2N_ECDSA_SECP521R1_STR "ecdsa_secp521r1"
+
+/* Constant strings for ML-DSA variants */
+#define S2N_MLDSA44_STR "mldsa44"
+#define S2N_MLDSA65_STR "mldsa65"
+#define S2N_MLDSA87_STR "mldsa87"
+
+/* Internal helper function to format public key string based on key type.
+ * Returns S2N_SUCCESS on success, S2N_FAILURE on failure.
+ * On success, required_size is set to the number of bytes written (including null terminator).
+ * On failure due to buffer too small, required_size is set to the required buffer size.
+ */
+S2N_RESULT s2n_format_public_key_string(const struct s2n_cert_info *cert_info,
+        char *output, uint32_t output_size, uint32_t *required_size)
+{
+    RESULT_ENSURE_REF(cert_info);
+    RESULT_ENSURE_REF(required_size);
+
+    const char *result_str = NULL;
+    uint32_t result_size = 0;
+    char rsa_buffer[S2N_PUBLIC_KEY_STRING_MAX_SIZE] = { 0 };
+
+    int public_key_nid = cert_info->public_key_nid;
+    int public_key_bits = cert_info->public_key_bits;
+
+    /* Handle RSA and RSA-PSS keys: format as "rsa_<bits>\0" */
+    if (public_key_nid == NID_rsaEncryption || public_key_nid == NID_rsassaPss) {
+        int written = snprintf(rsa_buffer, sizeof(rsa_buffer), "rsa_%d%c", public_key_bits, '\0');
+        RESULT_ENSURE_GT(written, 0);
+        RESULT_ENSURE_LT(written, (int) sizeof(rsa_buffer));
+        result_str = rsa_buffer;
+        /* written now includes the explicit null byte in the format string */
+        result_size = (uint32_t) written;
+    }
+    /* Handle ECDSA keys: map NID to curve name string */
+    else if (public_key_nid == NID_X9_62_prime256v1) {
+        result_str = S2N_ECDSA_SECP256R1_STR;
+        result_size = sizeof(S2N_ECDSA_SECP256R1_STR);
+    } else if (public_key_nid == NID_secp384r1) {
+        result_str = S2N_ECDSA_SECP384R1_STR;
+        result_size = sizeof(S2N_ECDSA_SECP384R1_STR);
+    } else if (public_key_nid == NID_secp521r1) {
+        result_str = S2N_ECDSA_SECP521R1_STR;
+        result_size = sizeof(S2N_ECDSA_SECP521R1_STR);
+    }
+    /* Handle ML-DSA keys: map NID to mldsa variant string */
+    else if (public_key_nid == S2N_NID_MLDSA44) {
+        result_str = S2N_MLDSA44_STR;
+        result_size = sizeof(S2N_MLDSA44_STR);
+    } else if (public_key_nid == S2N_NID_MLDSA65) {
+        result_str = S2N_MLDSA65_STR;
+        result_size = sizeof(S2N_MLDSA65_STR);
+    } else if (public_key_nid == S2N_NID_MLDSA87) {
+        result_str = S2N_MLDSA87_STR;
+        result_size = sizeof(S2N_MLDSA87_STR);
+    } else {
+        /* Unknown key type */
+        RESULT_BAIL(S2N_ERR_CERT_TYPE_UNSUPPORTED);
+    }
+
+    /* result_size includes the null terminator */
+    *required_size = result_size;
+
+    /* Check if output buffer is provided and large enough */
+    if (output == NULL || output_size < result_size) {
+        RESULT_BAIL(S2N_ERR_INSUFFICIENT_MEM_SIZE);
+    }
+
+    /* Copy the formatted string to output buffer (including null terminator) */
+    RESULT_CHECKED_MEMCPY(output, result_str, result_size);
+
+    return S2N_RESULT_OK;
+}
+
+int s2n_conn_get_signature_public_key(struct s2n_connection *conn,
+        s2n_mode mode, char *output, uint32_t *output_size)
+{
+    POSIX_ENSURE_REF(conn);
+    POSIX_ENSURE_REF(output);
+    POSIX_ENSURE_REF(output_size);
+
+    const struct s2n_cert_info *cert_info = NULL;
+    struct s2n_cert_info peer_cert_info = { 0 };
+
+    if (mode == S2N_SERVER) {
+        /* Get server certificate info */
+        if (conn->mode == S2N_CLIENT) {
+            /* We are a client, so server cert is the peer cert (validated) */
+            const struct s2n_x509_validator *validator = &conn->x509_validator;
+            POSIX_ENSURE(s2n_x509_validator_is_cert_chain_validated(validator), S2N_ERR_CERT_NOT_VALIDATED);
+
+            DEFER_CLEANUP(struct s2n_validated_cert_chain validated_cert_chain = { 0 },
+                    s2n_x509_validator_validated_cert_chain_free);
+            POSIX_GUARD_RESULT(s2n_x509_validator_get_validated_cert_chain(validator, &validated_cert_chain));
+            STACK_OF(X509) *cert_chain_validated = validated_cert_chain.stack;
+            POSIX_ENSURE_REF(cert_chain_validated);
+
+            int cert_count = sk_X509_num(cert_chain_validated);
+            POSIX_ENSURE_GT(cert_count, 0);
+
+            /* Get the leaf certificate (first in chain) */
+            X509 *leaf_cert = sk_X509_value(cert_chain_validated, 0);
+            POSIX_ENSURE_REF(leaf_cert);
+
+            POSIX_GUARD_RESULT(s2n_openssl_x509_get_cert_info(leaf_cert, &peer_cert_info));
+            cert_info = &peer_cert_info;
+        } else {
+            /* We are a server, so server cert is our own cert */
+            POSIX_ENSURE_REF(conn->handshake_params.our_chain_and_key);
+            POSIX_ENSURE_REF(conn->handshake_params.our_chain_and_key->cert_chain);
+            POSIX_ENSURE_REF(conn->handshake_params.our_chain_and_key->cert_chain->head);
+            cert_info = &conn->handshake_params.our_chain_and_key->cert_chain->head->info;
+        }
+    } else if (mode == S2N_CLIENT) {
+        /* Get client certificate info */
+        if (conn->mode == S2N_SERVER) {
+            /* We are a server, so client cert is the peer cert (validated) */
+            const struct s2n_x509_validator *validator = &conn->x509_validator;
+            POSIX_ENSURE(s2n_x509_validator_is_cert_chain_validated(validator), S2N_ERR_CERT_NOT_VALIDATED);
+
+            DEFER_CLEANUP(struct s2n_validated_cert_chain validated_cert_chain = { 0 },
+                    s2n_x509_validator_validated_cert_chain_free);
+            POSIX_GUARD_RESULT(s2n_x509_validator_get_validated_cert_chain(validator, &validated_cert_chain));
+            STACK_OF(X509) *cert_chain_validated = validated_cert_chain.stack;
+            POSIX_ENSURE_REF(cert_chain_validated);
+
+            int cert_count = sk_X509_num(cert_chain_validated);
+            POSIX_ENSURE_GT(cert_count, 0);
+
+            /* Get the leaf certificate (first in chain) */
+            X509 *leaf_cert = sk_X509_value(cert_chain_validated, 0);
+            POSIX_ENSURE_REF(leaf_cert);
+
+            POSIX_GUARD_RESULT(s2n_openssl_x509_get_cert_info(leaf_cert, &peer_cert_info));
+            cert_info = &peer_cert_info;
+        } else {
+            /* We are a client, so client cert is our own cert */
+            POSIX_ENSURE_REF(conn->handshake_params.our_chain_and_key);
+            POSIX_ENSURE_REF(conn->handshake_params.our_chain_and_key->cert_chain);
+            POSIX_ENSURE_REF(conn->handshake_params.our_chain_and_key->cert_chain->head);
+            cert_info = &conn->handshake_params.our_chain_and_key->cert_chain->head->info;
+        }
+    } else {
+        POSIX_BAIL(S2N_ERR_INVALID_ARGUMENT);
+    }
+
+    POSIX_ENSURE_REF(cert_info);
+
+    uint32_t required_size = 0;
+    S2N_RESULT result = s2n_format_public_key_string(cert_info, output, *output_size, &required_size);
+
+    /* Always set the output_size to the required/written size */
+    *output_size = required_size;
+
+    POSIX_GUARD_RESULT(result);
+
     return S2N_SUCCESS;
 }
