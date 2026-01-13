@@ -32,16 +32,16 @@
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Add unit tests for API
-  - [ ] 4.1 Create test file `tests/unit/s2n_conn_get_signature_public_key_test.c`
+  - [x] 4.1 Create test file `tests/unit/s2n_conn_get_signature_public_key_test.c`
     - Set up test infrastructure and includes (follow pattern from `s2n_certificate_test.c`)
     - Use `BEGIN_TEST()` and `END_TEST()` macros from `s2n_test.h`
     - _Requirements: 1.1_
-  - [ ] 4.2 Add null parameter tests
+  - [x] 4.2 Add null parameter tests
     - Test NULL connection returns S2N_FAILURE with S2N_ERR_NULL
     - Test NULL output buffer returns S2N_FAILURE with S2N_ERR_NULL
     - Test NULL output_size returns S2N_FAILURE with S2N_ERR_NULL
     - _Requirements: 1.2, 1.3, 1.4_
-  - [ ] 4.3 Add RSA certificate tests
+  - [x] 4.3 Add RSA certificate tests
     - Test RSA 2048-bit returns "rsa_2048" (use S2N_DEFAULT_TEST_CERT_CHAIN)
     - Test RSA 3072-bit returns "rsa_3072"
     - Test RSA 4096-bit returns "rsa_4096"
