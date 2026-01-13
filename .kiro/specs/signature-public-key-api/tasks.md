@@ -13,7 +13,7 @@
     - Handle ECDSA keys: map `public_key_nid` to curve name string (NID_X9_62_prime256v1 → "ecdsa_secp256r1", NID_secp384r1 → "ecdsa_secp384r1", NID_secp521r1 → "ecdsa_secp521r1")
     - Handle ML-DSA keys: map NID to `mldsa44`, `mldsa65`, `mldsa87`
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 4.1, 4.2, 4.3_
-  - [-] 2.2 Implement `s2n_conn_get_signature_public_key` function
+  - [x] 2.2 Implement `s2n_conn_get_signature_public_key` function
     - Add parameter validation using POSIX_ENSURE_REF for null checks
     - Check handshake completion state via `s2n_x509_validator_is_cert_chain_validated`
     - Retrieve certificate based on mode parameter (S2N_SERVER/S2N_CLIENT)

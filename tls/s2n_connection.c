@@ -2049,12 +2049,16 @@ int s2n_conn_get_signature_public_key(struct s2n_connection *conn,
     POSIX_ENSURE_REF(cert_info);
 
     uint32_t required_size = 0;
-    S2N_RESULT result = s2n_format_public_key_string(cert_info, output, *output_size, &required_size);
+    s2n_result format_result = s2n_format_public_key_string(cert_info, output, *output_size, &required_size);
 
     /* Always set the output_size to the required/written size */
     *output_size = required_size;
 
-    POSIX_GUARD_RESULT(result);
+    /* Now check the result - this will return failure if buffer was too small */
+    if (s2n_result_is_error(format_result)) {
+        /* Propagate the error that was set by s2n_format_public_key_string */
+        POSIX_BAIL(s2n_errno);
+    }
 
     return S2N_SUCCESS;
 }
