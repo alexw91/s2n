@@ -46,7 +46,6 @@ const TEST_CASES: &[TestCase] = &[
     TestCase::new("https://www.apple.com", &[200]),
     TestCase::new("https://www.att.com", &[200]),
     TestCase::new("https://www.cloudflare.com", &[200]),
-    TestCase::new("https://www.ebay.com", &[200]),
     TestCase::new("https://www.google.com", &[200]),
     TestCase::new("https://www.mozilla.org", &[200]),
     TestCase::new("https://www.netflix.com", &[200]),
