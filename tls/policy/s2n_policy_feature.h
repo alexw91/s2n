@@ -138,6 +138,20 @@ typedef enum {
      *     -- <kem_group_name>
      */
     S2N_POLICY_FORMAT_DEBUG_V1 = 1,
+    /**
+     * Produces a flat, one-algorithm-per-line output designed for diffing.
+     * Each line is a dot-separated identifier with the prefix "tls.":
+     *   - tls.version.TLSv<version>
+     *   - tls.ciphersuite.<IANA_cipher_suite_name>
+     *   - tls.signatureScheme.<signature_scheme_name>
+     *   - tls.supportedGroup.<curve_or_kem_group_name>
+     *
+     * Versions are listed from greatest to lowest.
+     * All other algorithms are listed in preference order.
+     * This format matches the TlsPolicyAlgorithmData representation
+     * used by TlsPolicyAdvisor.
+     */
+    S2N_POLICY_FORMAT_DIFFABLE_V1,
 } s2n_policy_format;
 
 /**

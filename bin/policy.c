@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "api/s2n.h"
@@ -23,14 +24,27 @@
 
 static int usage()
 {
-    printf("policy <version>\n"
-           "example: policy default_tls13\n\n");
+    printf("policy <version> [format]\n"
+           "  format: debug_v1 (default), S2N_POLICY_FORMAT_DIFFABLE_V1\n"
+           "example: policy default_tls13\n"
+           "example: policy default_tls13 S2N_POLICY_FORMAT_DIFFABLE_V1\n\n");
     return 0;
+}
+
+static s2n_policy_format parse_format(const char *format_str)
+{
+    if (strcmp(format_str, "S2N_POLICY_FORMAT_DIFFABLE_V1") == 0) {
+        return S2N_POLICY_FORMAT_DIFFABLE_V1;
+    }
+    if (strcmp(format_str, "S2N_POLICY_FORMAT_DEBUG_V1") == 0) {
+        return S2N_POLICY_FORMAT_DEBUG_V1;
+    }
+    return S2N_POLICY_FORMAT_DEBUG_V1;
 }
 
 int main(int argc, char *const *argv)
 {
-    if (argc != 2) {
+    if (argc < 2 || argc > 3) {
         usage();
         exit(1);
     }
@@ -41,6 +55,11 @@ int main(int argc, char *const *argv)
     }
 
     const char *policy_name = argv[1];
+    s2n_policy_format format = S2N_POLICY_FORMAT_DEBUG_V1;
+    if (argc == 3) {
+        format = parse_format(argv[2]);
+    }
+
     const struct s2n_security_policy *policy = NULL;
     if (s2n_find_security_policy_from_version(policy_name, &policy) != S2N_SUCCESS) {
         fprintf(stderr, "Error: Failed to find security policy\n");
@@ -49,7 +68,7 @@ int main(int argc, char *const *argv)
     }
 
     uint32_t output_size = 0;
-    if (s2n_security_policy_write_fd(policy, S2N_POLICY_FORMAT_DEBUG_V1, STDOUT_FILENO, &output_size) != S2N_SUCCESS) {
+    if (s2n_security_policy_write_fd(policy, format, STDOUT_FILENO, &output_size) != S2N_SUCCESS) {
         s2n_cleanup();
         exit(1);
     }

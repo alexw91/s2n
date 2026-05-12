@@ -131,6 +131,66 @@ static S2N_RESULT s2n_security_policy_write_format_v1_to_stuffer(const struct s2
     return S2N_RESULT_OK;
 }
 
+static const char *diffable_version_strs[] = {
+    [S2N_SSLv2] = "SSLv2",
+    [S2N_SSLv3] = "SSLv3",
+    [S2N_TLS10] = "TLSv1.0",
+    [S2N_TLS11] = "TLSv1.1",
+    [S2N_TLS12] = "TLSv1.2",
+    [S2N_TLS13] = "TLSv1.3",
+};
+
+static S2N_RESULT s2n_security_policy_write_diffable_v1_to_stuffer(const struct s2n_security_policy *policy, struct s2n_stuffer *stuffer)
+{
+    RESULT_ENSURE_REF(policy);
+    RESULT_ENSURE_REF(stuffer);
+
+    /* Determine the maximum protocol version by scanning cipher suites */
+    uint8_t max_version = policy->minimum_protocol_version;
+    for (size_t i = 0; i < policy->cipher_preferences->count; i++) {
+        uint8_t cipher_version = policy->cipher_preferences->suites[i]->minimum_required_tls_version;
+        if (cipher_version > max_version) {
+            max_version = cipher_version;
+        }
+    }
+
+    /* Versions: emit all supported versions from maximum down to minimum */
+    for (uint8_t v = max_version; v >= policy->minimum_protocol_version; v--) {
+        RESULT_GUARD_POSIX(s2n_stuffer_printf(stuffer, "tls.version.%s\n", diffable_version_strs[v]));
+        if (v == 0) {
+            break;
+        }
+    }
+
+    /* Cipher suites */
+    for (size_t i = 0; i < policy->cipher_preferences->count; i++) {
+        RESULT_GUARD_POSIX(s2n_stuffer_printf(stuffer, "tls.ciphersuite.%s\n",
+                policy->cipher_preferences->suites[i]->iana_name));
+    }
+
+    /* Signature schemes */
+    for (size_t i = 0; i < policy->signature_preferences->count; i++) {
+        RESULT_GUARD_POSIX(s2n_stuffer_printf(stuffer, "tls.signatureScheme.%s\n",
+                policy->signature_preferences->signature_schemes[i]->name));
+    }
+
+    /* PQ KEM groups as supported groups */
+    if (policy->kem_preferences && policy->kem_preferences != &kem_preferences_null) {
+        for (size_t i = 0; i < policy->kem_preferences->tls13_kem_group_count; i++) {
+            RESULT_GUARD_POSIX(s2n_stuffer_printf(stuffer, "tls.supportedGroup.%s\n",
+                    policy->kem_preferences->tls13_kem_groups[i]->name));
+        }
+    }
+
+    /* Supported groups (ECC curves) */
+    for (size_t i = 0; i < policy->ecc_preferences->count; i++) {
+        RESULT_GUARD_POSIX(s2n_stuffer_printf(stuffer, "tls.supportedGroup.%s\n",
+                policy->ecc_preferences->ecc_curves[i]->name));
+    }
+
+    return S2N_RESULT_OK;
+}
+
 static S2N_RESULT s2n_security_policy_write_to_stuffer(const struct s2n_security_policy *policy,
         s2n_policy_format format, struct s2n_stuffer *stuffer)
 {
@@ -140,6 +200,9 @@ static S2N_RESULT s2n_security_policy_write_to_stuffer(const struct s2n_security
     switch (format) {
         case S2N_POLICY_FORMAT_DEBUG_V1:
             RESULT_GUARD(s2n_security_policy_write_format_v1_to_stuffer(policy, stuffer));
+            break;
+        case S2N_POLICY_FORMAT_DIFFABLE_V1:
+            RESULT_GUARD(s2n_security_policy_write_diffable_v1_to_stuffer(policy, stuffer));
             break;
         default:
             RESULT_BAIL(S2N_ERR_INVALID_ARGUMENT);
