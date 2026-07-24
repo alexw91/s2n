@@ -1,0 +1,38 @@
+[
+  {
+    "line": 26,
+    "column": 22,
+    "variable": "blob",
+    "check_id": "no-uninit-locals"
+  },
+  {
+    "line": 31,
+    "column": 9,
+    "variable": "x",
+    "check_id": "no-uninit-locals"
+  },
+  {
+    "line": 36,
+    "column": 11,
+    "variable": "ptr",
+    "check_id": "no-uninit-locals"
+  },
+  {
+    "line": 41,
+    "column": 13,
+    "variable": "byte_val",
+    "check_id": "no-uninit-locals"
+  },
+  {
+    "line": 46,
+    "column": 5,
+    "variable": "blob_uninit",
+    "check_id": "no-uninit-locals"
+  },
+  {
+    "line": 52,
+    "column": 13,
+    "variable": "nested",
+    "check_id": "no-uninit-locals"
+  }
+]
